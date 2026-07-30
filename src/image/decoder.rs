@@ -1,0 +1,42 @@
+use crate::error::LRatio;
+use std::path::{Path, PathBuf};
+
+const IMAGE_EXTENSIONS: &[&str] = &[
+    "jpg", "jpeg", "png", "webp", "bmp", "gif", "tiff", "tif", "avif",
+];
+
+fn is_image(path: &Path) -> bool {
+    path.extension()
+        .and_then(|e| e.to_str())
+        .map(|e| {
+            IMAGE_EXTENSIONS
+                .iter()
+                .any(|ext| e.eq_ignore_ascii_case(ext))
+        })
+        .unwrap_or(false)
+}
+
+pub fn resolve(path: &Path) -> Result<PathBuf, LRatio> {
+    match path {
+        p if !p.exists() => Err(LRatio::ImageNotFound(p.to_path_buf())),
+        p if p.is_file() => Ok(p.to_path_buf()),
+        p if p.is_dir() => pick_from_dir(p),
+        _ => Err(LRatio::ImageNotFound(path.to_path_buf())),
+    }
+}
+
+fn pick_from_dir(dir: &Path) -> Result<PathBuf, LRatio> {
+    std::fs::read_dir(dir)?
+        .filter_map(Result::ok)
+        .map(|e| e.path())
+        .filter(|p| p.is_file() && is_image(p))
+        .filter_map(|p| {
+            std::fs::metadata(&p)
+                .and_then(|m| m.modified())
+                .ok()
+                .map(|t| (p, t))
+        })
+        .max_by_key(|(_, t)| *t)
+        .map(|(p, _)| p)
+        .ok_or_else(|| LRatio::EmptyDir(dir.to_path_buf()))
+}

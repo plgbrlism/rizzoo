@@ -2,6 +2,7 @@ pub mod cli;
 pub mod color;
 pub mod config;
 pub mod error;
+pub mod image;
 pub mod paths;
 
 fn main() {
