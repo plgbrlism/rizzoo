@@ -5,3 +5,5 @@ edition = "2024"
 authors = ["plgbrlism"]
 
 [dependencies]
+mcu-material-color = "0.2.2"
+serde = { version = "1.0.229", features = ["serde_derive"] }
