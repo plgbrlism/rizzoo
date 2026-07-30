@@ -19,7 +19,7 @@ pub enum LRatio {
     #[error("Home dir not found")]
     HomeDirNotFound,
     #[error("Create dir {0}: {1}")]
-    CreateDirFailed(PathBuf, String),
+    DirectoryCreationFailed(PathBuf, String),
     #[error("No compositor detected")]
     NoCompositorDetected,
 

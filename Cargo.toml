@@ -5,6 +5,7 @@ edition = "2024"
 authors = ["plgbrlism"]
 
 [dependencies]
+directories = "6.0.0"
 mcu-material-color = "0.2.2"
 serde = { version = "1.0.229", features = ["serde_derive"] }
 thiserror = "2.0.19"
