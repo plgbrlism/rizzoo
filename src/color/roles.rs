@@ -1,5 +1,3 @@
-// delete ts shit bro
-
 use mcu_material_color::dynamiccolor::{DynamicColor, DynamicScheme, MaterialDynamicColors};
 
 use crate::color::types::{MaterialRoles, Rgb};
