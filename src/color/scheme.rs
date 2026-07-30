@@ -33,8 +33,8 @@ fn make_dynamic_scheme(seed_hct: Hct, style: Style, is_dark: bool, contrast: f64
 impl SchemeGenerator {
     pub fn generate(seed: &Rgb, style: Style, is_dark: bool, contrast: f64) -> ColorScheme {
         let seed_hct = Hct::from_int(seed.to_argb_u32());
-        let dyn_scheme = make_dynamic_scheme(seed_hct, style, is_dark, contrast);
-        let roles = RoleExtractor::extract(&dyn_scheme);
+        let dynamic_scheme = make_dynamic_scheme(seed_hct, style, is_dark, contrast);
+        let roles = RoleExtractor::extract(&dynamic_scheme);
         let base16 = Base16Generator::from_roles(&roles);
         ColorScheme {
             wallpaper: String::new(),
@@ -42,7 +42,7 @@ impl SchemeGenerator {
             base16,
             seed_colors: None,
             pick: None,
-            scheme: Some(dyn_scheme),
+            scheme: Some(dynamic_scheme),
         }
     }
 

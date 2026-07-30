@@ -7,6 +7,7 @@ authors = ["plgbrlism"]
 [dependencies]
 clap = { version = "4.6.4", features = ["derive"] }
 directories = "6.0.0"
+image = "0.25.10"
 log = "0.4.33"
 mcu-material-color = "0.2.2"
 serde = { version = "1.0.229", features = ["serde_derive"] }

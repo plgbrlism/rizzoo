@@ -86,6 +86,6 @@ impl RoleExtractor {
     }
 }
 
-fn rgb(dc: &DynamicColor, scheme: &DynamicScheme) -> Rgb {
-    Rgb::from_argb_u32(dc.get_argb(scheme))
+fn rgb(dynamic_color: &DynamicColor, scheme: &DynamicScheme) -> Rgb {
+    Rgb::from_argb_u32(dynamic_color.get_argb(scheme))
 }
