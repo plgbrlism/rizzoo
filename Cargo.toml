@@ -7,3 +7,5 @@ authors = ["plgbrlism"]
 [dependencies]
 mcu-material-color = "0.2.2"
 serde = { version = "1.0.229", features = ["serde_derive"] }
+thiserror = "2.0.19"
+winnow = "1.0.4"
