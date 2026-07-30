@@ -308,7 +308,7 @@ macro_rules! MaterialRoles {
 pub struct ColorScheme {
     pub wallpaper: String,
     pub roles: MaterialRoles,
-    pub base16: [Rgb; 16],
+    //pub base16: [Rgb; 16],
     pub seed_colors: Option<Vec<Rgb>>,
     #[serde(default)]
     pub pick: Option<usize>,
@@ -321,7 +321,7 @@ impl std::fmt::Debug for ColorScheme {
         f.debug_struct("ColorScheme")
             .field("wallpaper", &self.wallpaper)
             .field("roles", &self.roles)
-            .field("base16", &self.base16)
+            //.field("base16", &self.base16)
             .field("seed_colors", &self.seed_colors)
             .finish()
     }
