@@ -8,6 +8,7 @@ pub mod image;
 pub mod paths;
 pub mod template;
 pub mod wallpaper;
+pub mod watch;
 
 fn main() {
     println!("heavily inspired matugen cli theming tool.!");
