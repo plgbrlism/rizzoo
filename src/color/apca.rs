@@ -1,4 +1,4 @@
-// ~~ Advanced Perceptual Color Algorithm ~~
+// ~~ Advanced Perceptual Color Algorithm //dead cant find a way to integrate without rewriting mcu_material_color ~~
 
 fn soft_clamp(y: f32) -> f32 {
     if y < 0.022 {

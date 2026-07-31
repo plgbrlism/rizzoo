@@ -62,8 +62,8 @@ impl Rgb {
         }
     }
 
-    pub fn to_hsl_raw(&self) -> String {
-        let (h, s, l) = self.to_hsl_tuple();
+    pub fn to_raw_hsl(&self) -> String {
+        let (h, s, l) = self.to_tuple_hsl();
         format!("{:.0},{:.0}%,{:.0}%", h, s, l)
     }
 
@@ -78,7 +78,7 @@ impl Rgb {
     // produces a different L for the same perceptual brightness). The saturation
     // formula accounts for the lightness axis to avoid dividing by zero at the
     // extremes (delta=0 → hue=0, saturation=0).
-    pub fn to_hsl_tuple(&self) -> (f64, f64, f64) {
+    pub fn to_tuple_hsl(&self) -> (f64, f64, f64) {
         let r = self.r as f64 / 255.0;
         let g = self.g as f64 / 255.0;
         let b = self.b as f64 / 255.0;
@@ -152,7 +152,7 @@ impl Rgb {
     }
 
     pub fn saturation(&self) -> f32 {
-        self.to_hsl_tuple().1 as f32 / 100.0
+        self.to_tuple_hsl().1 as f32 / 100.0
     }
 
     // Relative luminance per WCAG: sRGB linearization + Rec.709 weights.
@@ -170,23 +170,6 @@ impl Rgb {
             }
         }
         0.2126 * adjust_wcag(self.r) + 0.7152 * adjust_wcag(self.g) + 0.0722 * adjust_wcag(self.b)
-    }
-
-    // APCA luminance: pure sRGB gamma 2.4 with Rec.2020 coefficients.
-    // Unlike WCAG's piecewise function, APCA uses a pure power curve for
-    // sRGB linearization, matching the actual display transfer function.
-    // Weights follow human contrast sensitivity: 0.2126729 red, 0.7151522 green,
-    // 0.0721750 blue (perceptual luminance, not photopic). The higher green
-    // weight reflects APCA's focus on perceived contrast rather than physical
-    // brightness.
-    pub fn luminance_apca(&self) -> f32 {
-        fn linearize_srgb(c: u8) -> f32 {
-            let v = c as f32 / 255.0;
-            v.powf(2.4)
-        }
-        0.2126729 * linearize_srgb(self.r)
-            + 0.7151522 * linearize_srgb(self.g)
-            + 0.0721750 * linearize_srgb(self.b)
     }
 }
 
