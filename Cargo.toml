@@ -12,10 +12,12 @@ log = "0.4.33"
 mcu-material-color = "0.2.2"
 serde = { version = "1.0.229", features = ["serde_derive"] }
 serde_json = "1.0.151"
+tabled = { version = "0.21.0", features = ["ansi"] }
 thiserror = "2.0.19"
 toml = "1.1.4"
 ureq = "3.3.0"
 winnow = "1.0.4"
+yansi = "1.0.1"
 
 [dev-dependencies]
 tempfile = "3.27.0"
