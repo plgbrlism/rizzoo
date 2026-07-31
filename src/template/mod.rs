@@ -1,3 +1,3 @@
-pub mod filter;
+pub mod filters;
 pub mod interpreter;
 pub mod parser;
