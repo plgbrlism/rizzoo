@@ -1,7 +1,7 @@
 use mcu_material_color::DynamicScheme;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Copy)]
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub struct Rgb {
     pub r: u8,
     pub g: u8,
@@ -190,6 +190,25 @@ impl Rgb {
     }
 }
 
+impl Serialize for Rgb {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&self.to_hex())
+    }
+}
+
+impl<'de> Deserialize<'de> for Rgb {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        Rgb::from_hex(&s).ok_or_else(|| serde::de::Error::custom("invalid hex"))
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MaterialRoles {
     pub primary: Rgb,
@@ -244,64 +263,6 @@ pub struct MaterialRoles {
     pub on_background: Rgb,
     pub shadow: Rgb,
     pub scrim: Rgb,
-}
-
-#[macro_export]
-macro_rules! MaterialRoles {
-    (apply:ident, $(extra:tt)*) => {
-        $apply!(primary, $($extra)*),
-        $apply!(on_primary, $($extra)*),
-        $apply!(primary_container, $($extra)*),
-        $apply!(on_primary_container, $($extra)*),
-        $apply!(primary_fixed, $($extra)*),
-        $apply!(primary_fixed_dim, $($extra)*),
-        $apply!(on_primary_fixed, $($extra)*),
-        $apply!(on_primary_fixed_variant, $($extra)*),
-        $apply!(secondary, $($extra)*),
-        $apply!(on_secondary, $($extra)*),
-        $apply!(secondary_container, $($extra)*),
-        $apply!(on_secondary_container, $($extra)*),
-        $apply!(secondary_fixed, $($extra)*),
-        $apply!(secondary_fixed_dim, $($extra)*),
-        $apply!(on_secondary_fixed, $($extra)*),
-        $apply!(on_secondary_fixed_variant, $($extra)*),
-        $apply!(tertiary, $($extra)*),
-        $apply!(on_tertiary, $($extra)*),
-        $apply!(tertiary_container, $($extra)*),
-        $apply!(on_tertiary_container, $($extra)*),
-        $apply!(tertiary_fixed, $($extra)*),
-        $apply!(tertiary_fixed_dim, $($extra)*),
-        $apply!(on_tertiary_fixed, $($extra)*),
-        $apply!(on_tertiary_fixed_variant, $($extra)*),
-        $apply!(error, $($extra)*),
-        $apply!(on_error, $($extra)*),
-        $apply!(error_container, $($extra)*),
-        $apply!(on_error_container, $($extra)*),
-        $apply!(error_fixed, $($extra)*),
-        $apply!(error_fixed_dim, $($extra)*),
-        $apply!(on_error_fixed, $($extra)*),
-        $apply!(on_error_fixed_variant, $($extra)*),
-        $apply!(surface, $($extra)*),
-        $apply!(on_surface, $($extra)*),
-        $apply!(surface_container, $($extra)*),
-        $apply!(surface_container_low, $($extra)*),
-        $apply!(surface_container_high, $($extra)*),
-        $apply!(surface_container_highest, $($extra)*),
-        $apply!(surface_bright, $($extra)*),
-        $apply!(surface_dim, $($extra)*),
-        $apply!(on_surface_variant, $($extra)*),
-        $apply!(surface_tint, $($extra)*),
-        $apply!(surface_container_lowest, $($extra)*),
-        $apply!(outline, $($extra)*),
-        $apply!(outline_variant, $($extra)*),
-        $apply!(inverse_surface, $($extra)*),
-        $apply!(inverse_on_surface, $($extra)*),
-        $apply!(inverse_primary, $($extra)*),
-        $apply!(background, $($extra)*),
-        $apply!(on_background, $($extra)*),
-        $apply!(shadow, $($extra)*),
-        $apply!(scrim, $($extra)*),
-    };
 }
 
 #[derive(Clone, Serialize, Deserialize)]
