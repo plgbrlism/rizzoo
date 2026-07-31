@@ -44,14 +44,6 @@ pub struct Cli {
     pub restore: bool,
 
     #[arg(
-        short = 'a',
-        long = "apply",
-        default_value_t = false,
-        help = "recolor all open (live) terminals — unix specific only"
-    )]
-    pub apply: bool,
-
-    #[arg(
         short = 'p',
         long = "preview",
         default_value_t = false,
@@ -196,7 +188,6 @@ impl Cli {
         if !has_image
             && self.color.is_none()
             && !self.restore
-            && !self.apply
             && !self.symlink
             && self.link_to.is_none()
             && !self.render
