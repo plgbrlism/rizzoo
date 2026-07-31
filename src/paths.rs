@@ -6,7 +6,6 @@ use std::path::PathBuf;
 pub struct Paths {
     pub cache_dir: PathBuf,
     pub output: PathBuf,
-    pub sequences: PathBuf,
     pub schemes_dir: PathBuf,
     pub config_dir: PathBuf,
     pub templates_dir: PathBuf,
@@ -22,7 +21,6 @@ impl Paths {
 
         Ok(Self {
             output: cache_dir.join("colors.json"),
-            sequences: cache_dir.join("sequences"),
             schemes_dir: cache_dir.join("schemes"),
             cache_dir,
             templates_dir: config_dir.join("templates"),
