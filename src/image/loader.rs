@@ -17,7 +17,7 @@ pub fn download(url: &str) -> Result<PathBuf, LRatio> {
     let ext = guess_extension(&body);
     let pid = std::process::id();
     let tmp_dir = std::env::temp_dir();
-    let tmp_path = tmp_dir.join(format!("rizzoora-url-{}-{}", pid, ext));
+    let tmp_path = tmp_dir.join(format!("rizzoo-url-{}-{}", pid, ext));
 
     std::fs::write(&tmp_path, &body)
         .map_err(|e| LRatio::Custom(format!("failed to write temp image: {e}")))?;
@@ -30,7 +30,7 @@ pub fn is_downloaded_temp_file(path: &Path) -> bool {
     path.starts_with(std::env::temp_dir()) && {
         path.file_name()
             .and_then(|n| n.to_str())
-            .is_some_and(|n| n.starts_with("rizzoora-url-"))
+            .is_some_and(|n| n.starts_with("rizzoo-url-"))
     }
 }
 
