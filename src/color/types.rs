@@ -244,8 +244,8 @@ pub struct MaterialRoles {
     pub inverse_primary: Rgb,
     pub background: Rgb,
     pub on_background: Rgb,
-    pub shadow: Rgb,
-    pub scrim: Rgb,
+    //pub shadow: Rgb,
+    //pub scrim: Rgb,
 }
 
 #[derive(Clone, Serialize, Deserialize)]

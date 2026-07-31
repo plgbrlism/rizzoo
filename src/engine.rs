@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::io::IsTerminal;
+use yansi::Paint;
 
 use crate::cache;
 use crate::cli::Cli;
@@ -110,7 +111,7 @@ impl State {
         }
     }
 
-    fn resolve_seed_color(cli: &Cli, seed_colors: &[Rgb]) -> Result<(Rgb, usize), LRatio> {
+    fn resolve_seed_color(cli: &Cli, seed_colors: &[Rgb]) -> Result<(Rgb, usize, String), LRatio> {
         if seed_colors.is_empty() {
             return Err(LRatio::NoColors);
         }
@@ -123,13 +124,15 @@ impl State {
         } else {
             0
         };
-        Ok((seed_colors[pick], pick))
+        let c = &seed_colors[pick];
+        let swatch = "            "
+            .bg(yansi::Color::Rgb(c.r, c.g, c.b))
+            .to_string();
+        Ok((*c, pick, swatch))
     }
 
     fn show_interactive_picker(seed_colors: &[Rgb]) -> Result<usize, LRatio> {
         use dialoguer::Select;
-        use yansi::Paint;
-
         let swatches: Vec<String> = seed_colors
             .iter()
             .map(|c| {
@@ -146,7 +149,7 @@ impl State {
         let items_refs: Vec<&str> = items.iter().map(|s| s.as_str()).collect();
 
         let selection = Select::new()
-            .with_prompt("Pick a source color")
+            //.with_prompt("\npick a source")
             .items(&items_refs)
             .default(0)
             .interact()
@@ -193,15 +196,14 @@ impl State {
             }
         }
 
-        step(cli, &format!("style: {}", cli.style));
+        step(cli, &format!("scheme: {}", cli.style));
         let seed_colors = color::extract::ColorExtractor::extract(&image_path)?;
-        let (raw_color, pick) = Self::resolve_seed_color(cli, &seed_colors)?;
-        let pick_desc = if let Some(pref) = &cli.prefer {
-            format!("prefer: {pref}")
+        let (raw_color, pick, swatch) = Self::resolve_seed_color(cli, &seed_colors)?;
+        if let Some(pref) = &cli.prefer {
+            step(cli, &format!("source: prefer: {pref}"));
         } else {
-            format!("seed {pick} picked from {} candidates", seed_colors.len())
-        };
-        step(cli, &format!("color: {pick_desc}"));
+            step(cli, &format!("source: {}", swatch));
+        }
 
         let is_dark = !cli.light;
         let contrast = cli.contrast.multiplier();
@@ -308,11 +310,14 @@ impl State {
         let wp_config = self.config.wallpaper.clone();
         let should_set = self.cli.wallpaper || wallpaper::is_enabled(wp_config.as_ref());
         if should_set && !self.scheme.wallpaper.is_empty() {
-            wallpaper::set(
+            let setter_used = wallpaper::set(
                 &std::path::PathBuf::from(&self.scheme.wallpaper),
                 wp_config.as_ref(),
             )?;
-            step(&self.cli, &format!("wallpaper: {}", self.scheme.wallpaper));
+            step(
+                &self.cli,
+                &format!("wallpaper: {} via {}", self.scheme.wallpaper, setter_used),
+            );
         }
         Ok(())
     }
@@ -324,7 +329,7 @@ impl State {
         if self.cli.render {
             match TemplateRenderer::render_all(&self.paths, &self.scheme, Some(&self.custom_colors))
             {
-                Ok(()) => step(&self.cli, "rendered user templates to ~/.cache/rizzoo/"),
+                Ok(()) => step(&self.cli, "templates: rendered to ~/.cache/rizzoo/"),
                 Err(e) => return Err(e),
             }
         }
@@ -337,10 +342,10 @@ impl State {
         }
         if let Some(app_name) = &self.cli.link_to {
             export::generate::render_one(&self.paths, &self.config.templates, app_name)?;
-            step(&self.cli, &format!("symlinked config for: {app_name}"));
+            step(&self.cli, &format!("output: symlinked {app_name}"));
         } else if self.cli.symlink {
             export::generate::render_all(&self.paths, &self.config.templates)?;
-            step(&self.cli, "symlinked all configs from config.toml");
+            step(&self.cli, "output: symlinked all rendered templates");
         }
         Ok(())
     }

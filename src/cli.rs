@@ -38,7 +38,7 @@ pub struct Cli {
         short = 'R',
         long = "restore-wallpaper",
         default_value_t = false,
-        conflicts_with_all = ["image", "image-url"],
+        conflicts_with_all = ["image", "image_url"],
         help = "restore last wallpaper"
     )]
     pub restore: bool,
@@ -71,7 +71,7 @@ pub struct Cli {
     #[arg(
         long = "link-to",
         value_name = "APP",
-        help = "link specific app to output"
+        help = "link specific processed template to output"
     )]
     pub link_to: Option<String>,
 
@@ -84,7 +84,8 @@ pub struct Cli {
     pub wallpaper: bool,
 
     #[arg(
-        short = 'q', long = "silent", default_value_t = false,
+        short = 'q', long = "silent",
+        default_value_t = false,
         conflicts_with_all = ["preview"],
         help = "no process printed on screen"
     )]

@@ -63,7 +63,7 @@ fn render_and_symlink(
     let source_cache_path = paths.cache_dir.join(&entry.template);
     if !source_cache_path.exists() {
         return Err(LRatio::Custom(format!(
-            "Template '{}' not found in cache. Ensure it exists in ~/.config/rizzoora/templates/ and the --map flag was run.",
+            "Template '{}' not found in cache. Ensure it exists in ~/.config/rizzoora/templates/ and -r or --render flag was run.",
             entry.template
         )));
     }
@@ -148,44 +148,31 @@ pub fn preview(scheme: &ColorScheme, seed_colors: Option<&Vec<Rgb>>, pick: usize
     }
 
     builder.push_record(vec![
-        "\n\nPalette".bold().to_string(),
+        "\n\nMaterial Palette".bold().to_string(),
         "".into(),
         "".into(),
         "".into(),
     ]);
 
-    let roles = [
-        ("primary", &scheme.roles.primary),
-        ("on_primary", &scheme.roles.on_primary),
-        ("primary_container", &scheme.roles.primary_container),
-        ("on_primary_container", &scheme.roles.on_primary_container),
-        ("secondary", &scheme.roles.secondary),
-        ("on_secondary", &scheme.roles.on_secondary),
-        ("secondary_container", &scheme.roles.secondary_container),
-        (
-            "on_secondary_container",
-            &scheme.roles.on_secondary_container,
-        ),
-        ("tertiary", &scheme.roles.tertiary),
-        ("on_tertiary", &scheme.roles.on_tertiary),
-        ("error", &scheme.roles.error),
-        ("on_error", &scheme.roles.on_error),
-        ("surface", &scheme.roles.surface),
-        ("on_surface", &scheme.roles.on_surface),
-        ("surface_container", &scheme.roles.surface_container),
-        ("outline", &scheme.roles.outline),
-        ("background", &scheme.roles.background),
-        ("on_background", &scheme.roles.on_background),
-        ("surface_bright", &scheme.roles.surface_bright),
-        ("surface_dim", &scheme.roles.surface_dim),
-    ];
-
-    for (name, c) in &roles {
-        builder.push_record(vec![swatch(c), name.to_string(), c.to_hex(), "".into()]);
+    if let Ok(roles_json) = serde_json::to_value(&scheme.roles) {
+        if let Some(obj) = roles_json.as_object() {
+            for (name, value) in obj {
+                if let Some(hex) = value.as_str() {
+                    if let Some(color) = Rgb::from_hex(hex) {
+                        builder.push_record(vec![
+                            swatch(&color),
+                            name.to_string(),
+                            hex.to_string(),
+                            "".into(),
+                        ]);
+                    }
+                }
+            }
+        }
     }
 
     builder.push_record(vec![
-        "\n\nBase16".bold().to_string(),
+        "\n\nBase16 Palette".bold().to_string(),
         "".into(),
         "".into(),
         "".into(),
@@ -202,7 +189,7 @@ pub fn preview(scheme: &ColorScheme, seed_colors: Option<&Vec<Rgb>>, pick: usize
     let mut table = builder.build();
     table
         .with(Style::blank())
-        .with(Modify::new(Segment::all()).with(Padding::new(3, 1, 0, 0)));
+        .with(Modify::new(Segment::all()).with(Padding::new(3, 3, 0, 0)));
 
     println!("\n{}\n", table);
 }

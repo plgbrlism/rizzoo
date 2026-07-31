@@ -11,6 +11,66 @@ pub mod template;
 pub mod wallpaper;
 pub mod watch;
 
+use clap::Parser;
+
 fn main() {
-    println!("heavily inspired matugen cli theming tool.!");
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
+        .format_timestamp(None)
+        .init();
+
+    let cli = cli::Cli::parse();
+
+    if cli.init {
+        let paths = match paths::Paths::resolve() {
+            Ok(p) => p,
+            Err(e) => {
+                log::error!("{e}");
+                std::process::exit(1);
+            }
+        };
+        if let Err(e) = paths.check_config() {
+            log::error!("{e}");
+            std::process::exit(1);
+        }
+        return;
+    }
+
+    let paths = match paths::Paths::resolve() {
+        Ok(p) => {
+            if let Err(e) = p.check_directory() {
+                log::error!("{e}");
+                std::process::exit(1);
+            }
+            p
+        }
+        Err(e) => {
+            log::error!("{e}");
+            std::process::exit(1);
+        }
+    };
+
+    let config = config::Configuration::load(&paths.config_toml);
+    let cli = config.merge(&cli);
+
+    if let Err(e) = cli.validate() {
+        eprintln!("\x1b[31merror\x1b[0m: {e}");
+        std::process::exit(1);
+    }
+
+    if let Err(e) = run(cli, config) {
+        log::error!("{e}");
+        std::process::exit(1);
+    }
+}
+
+fn run(cli: cli::Cli, config: config::Configuration) -> Result<(), error::LRatio> {
+    let state = engine::State::new(cli, config)?;
+
+    state.set_wallpaper()?;
+    state.render_templates()?;
+    state.symlink_configs()?;
+    state.preview()?;
+    state.start_watch()?;
+
+    Ok(())
 }

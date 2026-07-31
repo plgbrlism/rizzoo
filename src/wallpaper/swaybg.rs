@@ -10,6 +10,8 @@ pub fn set(path: &Path) -> Result<(), LRatio> {
         .arg("fill")
         .arg("-i")
         .arg(path)
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
         .spawn()
         .map_err(|e| LRatio::WallpaperSet(format!("swaybg not found or failed to launch: {e}")))?;
 

@@ -13,11 +13,11 @@ mod mac;
 #[cfg(target_os = "windows")]
 mod windows;
 
-pub fn set(path: &Path, config: Option<&WallpaperConfiguration>) -> Result<(), LRatio> {
+pub fn set(path: &Path, config: Option<&WallpaperConfiguration>) -> Result<String, LRatio> {
     if let Some(cfg) = config {
         if let Some(cmd) = &cfg.command {
             run_hook(cmd, path)?;
-            return Ok(());
+            return Ok(format!("[{}]", cmd));
         }
     }
 
@@ -26,10 +26,10 @@ pub fn set(path: &Path, config: Option<&WallpaperConfiguration>) -> Result<(), L
 }
 
 pub fn is_enabled(config: Option<&WallpaperConfiguration>) -> bool {
-    config.and_then(|c| c.set).unwrap_or(true)
+    config.and_then(|c| c.set).unwrap_or(false)
 }
 
-fn auto_detect_set(path: &Path) -> Result<(), LRatio> {
+fn auto_detect_set(path: &Path) -> Result<String, LRatio> {
     #[cfg(target_os = "macos")]
     return macos::set(path);
 
@@ -44,7 +44,7 @@ fn auto_detect_set(path: &Path) -> Result<(), LRatio> {
 }
 
 #[cfg(target_os = "linux")]
-fn linux_set(path: &Path) -> Result<(), LRatio> {
+fn linux_set(path: &Path) -> Result<String, LRatio> {
     use std::env;
     use std::os::unix::fs::FileTypeExt;
 
@@ -102,7 +102,7 @@ fn linux_set(path: &Path) -> Result<(), LRatio> {
 
     for setter in wallpaper_setters.iter().filter(|b| (b.is_available)()) {
         match (setter.set)(path) {
-            Ok(()) => return Ok(()),
+            Ok(()) => return Ok(setter.name.to_string()),
             Err(e) => log::warn!(
                 "{}",
                 LRatio::WallpaperSet(format!("{} failed: {}", setter.name, e))
