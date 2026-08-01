@@ -10,6 +10,7 @@ pub struct Paths {
     pub config_dir: PathBuf,
     pub templates_dir: PathBuf,
     pub config_toml: PathBuf,
+    pub downloads_dir: PathBuf,
 }
 
 impl Paths {
@@ -22,6 +23,7 @@ impl Paths {
         Ok(Self {
             output: cache_dir.join("colors.json"),
             schemes_dir: cache_dir.join("schemes"),
+            downloads_dir: cache_dir.join("url-images"),
             cache_dir,
             templates_dir: config_dir.join("templates"),
             config_toml: config_dir.join("config.toml"),
@@ -33,6 +35,7 @@ impl Paths {
         for dir in [
             &self.cache_dir,
             &self.schemes_dir,
+            &self.downloads_dir,
             &self.config_dir,
             &self.templates_dir,
         ] {

@@ -179,6 +179,7 @@ impl State {
         if !force_regenerate {
             if let Ok(Some(mut cached)) = cache::load_scheme(paths, &key) {
                 step(cli, "colors: loaded from cache");
+                cached.wallpaper = image_arg.to_string_lossy().to_string();
                 let pick = cached.pick.unwrap_or(0);
                 let seed_colors = if cli.preview && cached.seed_colors.is_none() {
                     color::extract::ColorExtractor::extract(&image_path).unwrap_or_default()
@@ -229,6 +230,7 @@ impl State {
 
         scheme.seed_colors = Some(seed_colors.clone());
         scheme.pick = Some(pick);
+        scheme.wallpaper = image_arg.to_string_lossy().to_string();
         step(cli, "colors: generated");
 
         let custom_colors = Self::generate_custom_colors(config, &raw_color)?;
@@ -239,9 +241,10 @@ impl State {
             }
         }
 
-        if crate::image::loader::is_downloaded_temp_file(image_arg) {
-            let _ = std::fs::remove_file(image_arg);
-        }
+        // dead, transitioned into persistent caching of url images
+        //if crate::image::loader::is_downloaded_temp_file(image_arg) {
+        //    let _ = std::fs::remove_file(image_arg);
+        //}
 
         Ok(GeneratedScheme {
             scheme,

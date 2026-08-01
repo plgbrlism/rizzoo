@@ -21,6 +21,14 @@ pub fn set(path: &Path, config: Option<&WallpaperConfiguration>) -> Result<Strin
         }
     }
 
+    // url-images check
+    if !path.exists() {
+        return Err(LRatio::WallpaperSet(format!(
+            "file missing {}",
+            path.display()
+        )));
+    }
+
     // Platform-specific auto-detection
     auto_detect_set(path)
 }

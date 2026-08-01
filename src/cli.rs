@@ -195,7 +195,7 @@ impl Cli {
             && !self.preview
         {
             return Err(
-                "what to do?: -i image, -u url, -c color, -R restore, -a terminals, -m fill templates, -r link apps, -p preview".into()
+                "what to do?\n [-i image, -u url, -c color, -R restore, -a terminals, -m fill templates, -r link apps, -p preview]".into()
             );
         }
         if self.prefer.is_some() && !has_image {

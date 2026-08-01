@@ -1,5 +1,5 @@
 use crate::error::LRatio;
-use std::path::Path;
+use crate::paths::Paths;
 use std::path::PathBuf;
 
 pub fn download(url: &str) -> Result<PathBuf, LRatio> {
@@ -15,24 +15,31 @@ pub fn download(url: &str) -> Result<PathBuf, LRatio> {
     }
 
     let ext = guess_extension(&body);
-    let pid = std::process::id();
-    let tmp_dir = std::env::temp_dir();
-    let tmp_path = tmp_dir.join(format!("rizzoo-url-{}-{}", pid, ext));
+    let hash = format!("{:x}", md5::compute(url.as_bytes()));
+    let filename = url
+        .split('/')
+        .last()
+        .unwrap_or("image")
+        .split('?')
+        .next()
+        .unwrap_or("image");
 
-    std::fs::write(&tmp_path, &body)
-        .map_err(|e| LRatio::Custom(format!("failed to write temp image: {e}")))?;
+    let paths = Paths::resolve()?;
 
-    Ok(tmp_path)
+    let path = paths.downloads_dir.join(format!("{}{}", hash, ext));
+    std::fs::write(&path, &body)?;
+    Ok(path)
 }
 
+// dead, transitioned into persistent caching of url images
 /// Returns `true` if `path` was created by a previous call to `download()`.
-pub fn is_downloaded_temp_file(path: &Path) -> bool {
-    path.starts_with(std::env::temp_dir()) && {
-        path.file_name()
-            .and_then(|n| n.to_str())
-            .is_some_and(|n| n.starts_with("rizzoo-url-"))
-    }
-}
+//pub fn is_downloaded_temp_file(path: &Path) -> bool {
+//    path.starts_with(std::env::temp_dir()) && {
+//        path.file_name()
+//            .and_then(|n| n.to_str())
+//            .is_some_and(|n| n.starts_with("rizzoo-url-"))
+//    }
+//}
 
 fn guess_extension(bytes: &[u8]) -> &'static str {
     if bytes.len() < 4 {
