@@ -2,7 +2,7 @@ use crate::error::LRatio;
 use std::path::Path;
 use std::process::Command;
 
-pub fn set(path: &Path) -> Result<String, LRatio> {
+pub fn set(path: &Path) -> Result<(), LRatio> {
     let escaped = path.display().to_string().replace('"', "\\\"");
     let script = format!(
         "tell application \"Finder\" to set desktop picture to POSIX file \"{}\"",

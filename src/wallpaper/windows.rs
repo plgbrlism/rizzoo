@@ -12,7 +12,7 @@ extern "system" {
     -> i32;
 }
 
-pub fn set(path: &Path) -> Result<String, LRatio> {
+pub fn set(path: &Path) -> Result<(), LRatio> {
     let wide: Vec<u16> = path
         .as_os_str()
         .encode_wide()
