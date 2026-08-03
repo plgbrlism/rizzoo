@@ -66,9 +66,9 @@ impl State {
 
     fn resolve_image(cli: &Cli) -> Result<Option<std::path::PathBuf>, LRatio> {
         if let Some(url) = &cli.image_url {
-            Ok(Some(crate::image::loader::download(url)?))
+            Ok(Some(crate::image::download::download(url)?))
         } else if let Some(path) = &cli.image {
-            Ok(Some(crate::image::decoder::resolve(path)?))
+            Ok(Some(crate::image::decode::resolve(path)?))
         } else {
             Ok(None)
         }
@@ -163,7 +163,7 @@ impl State {
         config: &Configuration,
         image_arg: &std::path::Path,
     ) -> Result<GeneratedScheme, LRatio> {
-        let image_path = image::decoder::resolve(image_arg)?;
+        let image_path = image::decode::resolve(image_arg)?;
         step(cli, &format!("image: {}", image_path.display()));
 
         if cli.light {

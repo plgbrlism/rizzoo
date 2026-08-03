@@ -1,2 +1,2 @@
-pub mod decoder;
-pub mod loader;
+pub mod decode;
+pub mod download;
