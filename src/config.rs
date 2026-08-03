@@ -52,9 +52,9 @@ pub enum Contrast {
 impl Contrast {
     pub fn as_str(&self) -> &'static str {
         match self {
-            Self::High => "standard",
+            Self::Standard => "standard",
             Self::Medium => "medium",
-            Self::Standard => "high",
+            Self::High => "high",
         }
     }
 
