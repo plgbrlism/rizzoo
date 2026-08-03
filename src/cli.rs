@@ -62,18 +62,18 @@ pub struct Cli {
 
     #[arg(
         short = 'l',
-        long = "link",
+        long = "output",
         default_value_t = false,
-        help = "link all processed template to output"
+        help = "write all processed templates to output"
     )]
-    pub symlink: bool,
+    pub output: bool,
 
     #[arg(
-        long = "link-to",
+        long = "output-to",
         value_name = "APP",
-        help = "link specific processed template to output"
+        help = "write specific processed template to output"
     )]
-    pub link_to: Option<String>,
+    pub output_to: Option<String>,
 
     #[arg(
         short = 'w',
@@ -189,13 +189,13 @@ impl Cli {
         if !has_image
             && self.color.is_none()
             && !self.restore
-            && !self.symlink
-            && self.link_to.is_none()
+            && !self.output
+            && self.output_to.is_none()
             && !self.render
             && !self.preview
         {
             return Err(
-                "what to do?\n [-i image, -u url, -c color, -R restore, -a terminals, -m fill templates, -r link apps, -p preview]".into()
+                "what to do?\n [-i image, -u url, -c color, -R restore, -m fill templates, -l output apps, -p preview]".into()
             );
         }
         if self.prefer.is_some() && !has_image {

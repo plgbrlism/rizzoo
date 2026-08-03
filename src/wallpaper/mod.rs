@@ -39,7 +39,7 @@ pub fn is_enabled(config: Option<&WallpaperConfiguration>) -> bool {
 
 fn auto_detect_set(path: &Path) -> Result<String, LRatio> {
     #[cfg(target_os = "macos")]
-    return macos::set(path);
+    return mac::set(path);
 
     #[cfg(target_os = "windows")]
     return windows::set(path);

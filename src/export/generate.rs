@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use directories::BaseDirs;
 use tabled::{
@@ -13,27 +13,12 @@ use crate::config::TemplateConfiguration;
 use crate::error::LRatio;
 use crate::paths::Paths;
 
-fn symlink(src: &Path, dst: &Path) -> std::io::Result<()> {
-    #[cfg(unix)]
-    {
-        std::os::unix::fs::symlink(src, dst)
-    }
-    #[cfg(windows)]
-    {
-        std::os::windows::fs::symlink_file(src, dst)
-    }
-    #[cfg(not(any(unix, windows)))]
-    {
-        std::fs::copy(src, dst).map(|_| ())
-    }
-}
-
 pub fn render_all(
     paths: &Paths,
     templates: &HashMap<String, TemplateConfiguration>,
 ) -> Result<(), LRatio> {
     for (name, entry) in templates {
-        if let Err(e) = render_and_symlink(name, entry, paths) {
+        if let Err(e) = render_and_write(name, entry, paths) {
             log::warn!("{e}");
         }
     }
@@ -48,10 +33,10 @@ pub fn render_one(
     let entry = templates
         .get(name)
         .ok_or_else(|| LRatio::Custom(format!("entry '{name}' not found in config")))?;
-    render_and_symlink(name, entry, paths)
+    render_and_write(name, entry, paths)
 }
 
-fn render_and_symlink(
+fn render_and_write(
     name: &str,
     entry: &TemplateConfiguration,
     paths: &Paths,
@@ -76,7 +61,7 @@ fn render_and_symlink(
             })?;
         }
     }
-    if output_path.exists() || output_path.is_symlink() {
+    if output_path.exists() {
         std::fs::remove_file(&output_path).map_err(|e| {
             LRatio::Custom(format!(
                 "Failed to remove existing file at {}: {}",
@@ -85,8 +70,8 @@ fn render_and_symlink(
             ))
         })?;
     }
-    symlink(&source_cache_path, &output_path).map_err(|e| {
-        LRatio::SymlinkFailed(
+    std::fs::copy(&source_cache_path, &output_path).map_err(|e| {
+        LRatio::OutputWriteFailed(
             source_cache_path.clone(),
             output_path.clone(),
             e.to_string(),

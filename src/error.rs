@@ -64,8 +64,8 @@ pub enum LRatio {
     // Output
     #[error("Colors.json write: {0} - {1}")]
     ColorsJsonWrite(PathBuf, String),
-    #[error("Symlink {0} -> {1}: {2}")]
-    SymlinkFailed(PathBuf, PathBuf, String),
+    #[error("Output write {0} -> {1}: {2}")]
+    OutputWriteFailed(PathBuf, PathBuf, String),
 
     #[error("{0}")]
     Custom(String),

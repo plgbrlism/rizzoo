@@ -68,7 +68,7 @@ fn run(cli: cli::Cli, config: config::Configuration) -> Result<(), error::LRatio
 
     state.set_wallpaper()?;
     state.render_templates()?;
-    state.symlink_configs()?;
+    state.write_outputs()?;
     state.preview()?;
     state.start_watch()?;
 

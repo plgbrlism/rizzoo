@@ -66,6 +66,10 @@ impl State {
 
     fn resolve_image(cli: &Cli) -> Result<Option<std::path::PathBuf>, LRatio> {
         if let Some(url) = &cli.image_url {
+            let paths = Paths::resolve()?;
+            if let Some(cached) = crate::image::download::cached_url_path(url, &paths) {
+                return Ok(Some(cached));
+            }
             Ok(Some(crate::image::download::download(url)?))
         } else if let Some(path) = &cli.image {
             Ok(Some(crate::image::decode::resolve(path)?))
@@ -339,16 +343,16 @@ impl State {
         Ok(())
     }
 
-    pub fn symlink_configs(&self) -> Result<(), LRatio> {
+    pub fn write_outputs(&self) -> Result<(), LRatio> {
         if self.cli.dry_run {
             return Ok(());
         }
-        if let Some(app_name) = &self.cli.link_to {
+        if let Some(app_name) = &self.cli.output_to {
             export::generate::render_one(&self.paths, &self.config.templates, app_name)?;
-            step(&self.cli, &format!("output: symlinked {app_name}"));
-        } else if self.cli.symlink {
+            step(&self.cli, &format!("output: wrote {app_name}"));
+        } else if self.cli.output {
             export::generate::render_all(&self.paths, &self.config.templates)?;
-            step(&self.cli, "output: symlinked all rendered templates");
+            step(&self.cli, "output: wrote all rendered templates");
         }
         Ok(())
     }
