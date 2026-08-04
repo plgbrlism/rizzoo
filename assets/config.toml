@@ -1,6 +1,5 @@
 # ~/.config/rizzoo/config.toml
 # See `rizzoo --help` for all available flags and values.
-#
 # Uncomment and edit only what you want to override.
 
 # style = "tonal-spot"
@@ -17,35 +16,35 @@
 # accent    = { color = "#e06c75", blend = true }
 # highlight = { color = "#61afef" }
 
-# [templates.alacritty]
+# [alacritty]
 # template = "alacritty.tmpl"
 # output   = "~/.config/alacritty/colors.toml"
 # post_hook = "pkill -SIGUSR1 alacritty"
 
-# [templates.kitty]
+# [kitty]
 # template = "kitty.tmpl"
 # output   = "~/.config/kitty/colors.conf"
 # post_hook = "kill -SIGUSR1 $(pidof kitty)"
 
-# [templates.waybar]
+# [waybar]
 # template = "waybar.tmpl"
 # output   = "~/.config/waybar/style.css"
 # post_hook = "pkill -SIGUSR2 waybar"
 
-# [templates.rofi]
+# [rofi]
 # template = "rofi.tmpl"
 # output   = "~/.config/rofi/colors.rasi"
 
-# [templates.sway]
+# [sway]
 # template = "sway.tmpl"
 # output   = "~/.config/sway/colors"
 # post_hook = "swaymsg reload"
 
-# [templates.hyprland]
+# [hyprland]
 # template = "hyprland.tmpl"
 # output   = "~/.config/hypr/colors.conf"
 # post_hook = "hyprctl reload"
 
-# [templates.wezterm]
+# [wezterm]
 # template = "wezterm.tmpl"
 # output   = "~/.config/wezterm/colors.toml"
