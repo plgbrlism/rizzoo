@@ -20,7 +20,7 @@ fn main() {
 
     let cli = cli::Cli::parse();
 
-    if cli.init {
+    if cli.init || cli.init_overwrite {
         let paths = match paths::Paths::resolve() {
             Ok(p) => p,
             Err(e) => {
@@ -28,7 +28,7 @@ fn main() {
                 std::process::exit(1);
             }
         };
-        if let Err(e) = paths.check_config() {
+        if let Err(e) = paths.check_config(cli.init_overwrite) {
             log::error!("{e}");
             std::process::exit(1);
         }

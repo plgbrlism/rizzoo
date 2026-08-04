@@ -178,11 +178,19 @@ pub struct Cli {
         help = "generate configuration file"
     )]
     pub init: bool,
+
+    #[arg(
+        long = "init-overwrite",
+        default_value_t = false,
+        conflicts_with = "init",
+        help = "overwrite configuration file with defaults"
+    )]
+    pub init_overwrite: bool,
 }
 
 impl Cli {
     pub fn validate(&self) -> Result<(), String> {
-        if self.init {
+        if self.init || self.init_overwrite {
             return Ok(());
         }
         let has_image = self.image.is_some() || self.image_url.is_some();

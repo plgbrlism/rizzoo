@@ -48,14 +48,17 @@ impl Paths {
         Ok(())
     }
 
-    pub fn check_config(&self) -> Result<(), LRatio> {
+    pub fn check_config(&self, force: bool) -> Result<(), LRatio> {
         self.check_directory()?;
-        if !self.config_toml.exists() {
-            let default = include_str!("../assets/config.toml");
-            std::fs::write(&self.config_toml, default).map_err(|e| {
-                LRatio::DirectoryCreationFailed(self.config_toml.clone(), e.to_string())
-            })?;
+        if self.config_toml.exists() && !force {
+            log::warn!("config already exists at {}", self.config_toml.display());
+            log::warn!("use --init-overwrite to reset to defaults");
+            return Ok(());
         }
+        let default = include_str!("../assets/config.toml");
+        std::fs::write(&self.config_toml, default).map_err(|e| {
+            LRatio::DirectoryCreationFailed(self.config_toml.clone(), e.to_string())
+        })?;
         Ok(())
     }
 
