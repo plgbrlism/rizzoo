@@ -201,7 +201,19 @@ impl State {
             }
         }
 
-        step(cli, &format!("scheme: {}", cli.style));
+        if let Some(blend) = cli.blend_style {
+            let primary_pct = ((1.0 - cli.blend_ratio) * 100.0).round() as u32;
+            let secondary_pct = (cli.blend_ratio * 100.0).round() as u32;
+            step(
+                cli,
+                &format!(
+                    "scheme: {}% {} + {}% {}",
+                    primary_pct, cli.style, secondary_pct, blend
+                ),
+            );
+        } else {
+            step(cli, &format!("scheme: {}", cli.style));
+        }
         let seed_colors = color::extract::ColorExtractor::extract(&image_path)?;
         let (raw_color, pick, swatch) = Self::resolve_seed_color(cli, &seed_colors)?;
         if let Some(pref) = &cli.prefer {
@@ -271,7 +283,19 @@ impl State {
             step(cli, "mode: light");
         }
         step(cli, &format!("color: {}", raw_color.to_hex()));
-        step(cli, &format!("style: {}", cli.style));
+        if let Some(blend) = cli.blend_style {
+            let primary_pct = ((1.0 - cli.blend_ratio) * 100.0).round() as u32;
+            let secondary_pct = (cli.blend_ratio * 100.0).round() as u32;
+            step(
+                cli,
+                &format!(
+                    "style: {}% {} + {}% {}",
+                    primary_pct, cli.style, secondary_pct, blend
+                ),
+            );
+        } else {
+            step(cli, &format!("style: {}", cli.style));
+        }
 
         let is_dark = !cli.light;
         let contrast = cli.contrast.multiplier();
