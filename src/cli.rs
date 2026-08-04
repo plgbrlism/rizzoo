@@ -61,7 +61,7 @@ pub struct Cli {
     pub render: bool,
 
     #[arg(
-        short = 'l',
+        short = 'o',
         long = "output",
         default_value_t = false,
         help = "write all processed templates to output"

@@ -2,7 +2,8 @@ use crate::error::LRatio;
 use std::path::{Path, PathBuf};
 
 const IMAGE_EXTENSIONS: &[&str] = &[
-    "jpg", "jpeg", "png", "webp", "bmp", "gif", "tiff", "tif", "avif",
+    "jpg", "jpeg", "png", "webp", "bmp", "gif", "tiff", "tif",
+    "avif", // fixed: needs to enable avif-native in image crate
 ];
 
 fn is_image(path: &Path) -> bool {
