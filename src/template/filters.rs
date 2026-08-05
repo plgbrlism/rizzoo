@@ -235,13 +235,15 @@ impl FilterRegistry {
 
     // Iteratively adjusts lightness in 5% steps (up to 20 iterations) until
     // the WCAG contrast ratio against the background meets the target.
-    // Moves away from the background's lightness — if fg is darker than bg,
+    // Moves AWAY from the background's lightness — if fg is darker than bg,
     // it darkens further; if lighter, it lightens. If the target isn't reached
-    // after 20 steps, returns the original color unchanged.
+    // after 20 steps, returns the last candidate tried.
     //
     // brute-force 5% steps; a binary search would converge faster
     // for extreme ratios. Replace with binary search if contrast failures are
     // reported with reasonable input colors.
+    // ponytail: 20-step linear walk caps the reachable shift (~100 lightness
+    // pts); binary search + a peek at both directions would guarantee success.
     fn ensure_contrast_op(fg: &Rgb, bg: &Rgb, target_ratio: f32) -> Rgb {
         let current = crate::color::blend::contrast_ratio(fg, bg);
         if current >= target_ratio {
@@ -249,23 +251,201 @@ impl FilterRegistry {
         }
         let (h, s, mut l) = fg.to_tuple_hsl();
         let bg_l = bg.to_tuple_hsl().2;
-        if l < bg_l {
-            for _ in 0..20 {
-                l = (l + 5.0).min(100.0);
-                let candidate = Rgb::from_hsl_tuple(h, s, l);
-                if crate::color::blend::contrast_ratio(&candidate, bg) >= target_ratio {
-                    return candidate;
-                }
-            }
-        } else {
-            for _ in 0..20 {
-                l = (l - 5.0).max(0.0);
-                let candidate = Rgb::from_hsl_tuple(h, s, l);
-                if crate::color::blend::contrast_ratio(&candidate, bg) >= target_ratio {
-                    return candidate;
-                }
+        // move away from bg: if fg is darker than bg, darken it (and vice-versa)
+        let trend = if l < bg_l { -5.0 } else { 5.0 };
+        let mut last = *fg;
+        for _ in 0..20 {
+            l = (l + trend).clamp(0.0, 100.0);
+            let candidate = Rgb::from_hsl_tuple(h, s, l);
+            last = candidate;
+            if crate::color::blend::contrast_ratio(&candidate, bg) >= target_ratio {
+                return candidate;
             }
         }
-        *fg
+        last
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn apply(name: &str, value: &str) -> String {
+        FilterRegistry::apply(name, value, &[]).unwrap()
+    }
+
+    #[test]
+    fn hex_passthrough() {
+        assert_eq!(apply("hex", "#ff8000"), "#ff8000");
+    }
+
+    #[test]
+    fn hex_raw() {
+        assert_eq!(apply("hex_raw", "#ff8000"), "ff8000");
+    }
+
+    #[test]
+    fn rgb() {
+        assert_eq!(apply("rgb", "#ff8000"), "255,128,0");
+    }
+
+    #[test]
+    fn rgb_css() {
+        assert_eq!(apply("rgb_css", "#ff8000"), "Rgb255, 128, 0");
+    }
+
+    #[test]
+    fn rgba_default_alpha() {
+        assert_eq!(apply("rgba", "#ff8000"), "Rgba255, 128, 0, 1.0");
+    }
+
+    #[test]
+    fn rgba_custom_alpha() {
+        assert_eq!(
+            FilterRegistry::apply("rgba", "#ff8000", &["0.5".into()]).unwrap(),
+            "Rgba255, 128, 0, 0.5"
+        );
+    }
+
+    #[test]
+    fn hsl() {
+        assert_eq!(apply("hsl", "#ff0000"), "0,100%,50%");
+    }
+
+    #[test]
+    fn hue_saturation_lightness() {
+        assert_eq!(apply("hue", "#ff0000"), "0");
+        assert_eq!(apply("saturation", "#ff0000"), "100");
+        assert_eq!(apply("lightness", "#ff0000"), "50");
+    }
+
+    #[test]
+    fn channels() {
+        assert_eq!(apply("r", "#ff8000"), "255");
+        assert_eq!(apply("g", "#ff8000"), "128");
+        assert_eq!(apply("b", "#ff8000"), "0");
+    }
+
+    #[test]
+    fn invert() {
+        assert_eq!(apply("invert", "#ff0000"), "#00ffff");
+    }
+
+    #[test]
+    fn grayscale() {
+        assert_eq!(apply("grayscale", "#ff8000"), "#7f7f7f");
+    }
+
+    #[test]
+    fn lighten_black() {
+        assert_eq!(apply("lighten", "#000000"), "#1a1a1a");
+    }
+
+    #[test]
+    fn darken_white() {
+        assert_eq!(apply("darken", "#ffffff"), "#e6e6e6");
+    }
+
+    #[test]
+    fn lighten_with_explicit_amount() {
+        let out = FilterRegistry::apply("lighten", "#000000", &["0.5".into()]).unwrap();
+        assert_ne!(out, "#000000");
+        assert!(Rgb::from_hex(&out).is_some());
+    }
+
+    #[test]
+    fn saturate_desaturate_move() {
+        let gray = "#808080";
+        let sat = apply("saturate", gray);
+        let desat = apply("desaturate", "#ff0000");
+        assert_ne!(sat, gray);
+        assert_ne!(desat, "#ff0000");
+    }
+
+    #[test]
+    fn set_hue_roundtrip() {
+        // hue(set_hue(color, 120)) == 120
+        let out = FilterRegistry::apply("set_hue", "#ff0000", &["120".into()]).unwrap();
+        let h = FilterRegistry::apply("hue", &out, &[]).unwrap();
+        assert_eq!(h, "120");
+    }
+
+    #[test]
+    fn set_saturation_roundtrip() {
+        let out = FilterRegistry::apply("set_saturation", "#ff0000", &["40".into()]).unwrap();
+        let s = FilterRegistry::apply("saturation", &out, &[]).unwrap();
+        assert_eq!(s, "40");
+    }
+
+    #[test]
+    fn set_lightness_roundtrip() {
+        let out = FilterRegistry::apply("set_lightness", "#ff0000", &["30".into()]).unwrap();
+        let l = FilterRegistry::apply("lightness", &out, &[]).unwrap();
+        assert_eq!(l, "30");
+    }
+
+    #[test]
+    fn set_channels_roundtrip() {
+        let out = FilterRegistry::apply("set_red", "#ff0000", &["100".into()]).unwrap();
+        assert_eq!(FilterRegistry::apply("r", &out, &[]).unwrap(), "100");
+        let out = FilterRegistry::apply("set_green", "#ff0000", &["77".into()]).unwrap();
+        assert_eq!(FilterRegistry::apply("g", &out, &[]).unwrap(), "77");
+        let out = FilterRegistry::apply("set_blue", "#ff0000", &["33".into()]).unwrap();
+        assert_eq!(FilterRegistry::apply("b", &out, &[]).unwrap(), "33");
+    }
+
+    #[test]
+    fn blend_endpoints() {
+        let a = FilterRegistry::apply("blend", "#ff0000", &["#00ff00".into(), "0.0".into()]).unwrap();
+        assert_eq!(a, "#ff0000");
+        let b = FilterRegistry::apply("blend", "#ff0000", &["#00ff00".into(), "1.0".into()]).unwrap();
+        assert_eq!(b, "#00ff00");
+    }
+
+    #[test]
+    fn blend_requires_two_args() {
+        assert!(FilterRegistry::apply("blend", "#ff0000", &["#00ff00".into()]).is_err());
+    }
+
+    #[test]
+    fn ensure_contrast_already_met_unchanged() {
+        let out =
+            FilterRegistry::apply("ensure_contrast", "#ffffff", &["#000000".into(), "4.5".into()])
+                .unwrap();
+        assert_eq!(out, "#ffffff");
+    }
+
+    #[test]
+    fn ensure_contrast_lifts_fg() {
+        let out =
+            FilterRegistry::apply("ensure_contrast", "#333333", &["#ffffff".into(), "7.0".into()])
+                .unwrap();
+        assert_ne!(out, "#333333");
+        let fg = Rgb::from_hex(&out).unwrap();
+        let bg = Rgb::from_hex("#ffffff").unwrap();
+        assert!(crate::color::blend::contrast_ratio(&fg, &bg) >= 7.0);
+    }
+
+    #[test]
+    fn harmonize_changes_hue_toward_target() {
+        let out = FilterRegistry::apply("harmonize", "#ff0000", &["#00ff00".into()]).unwrap();
+        assert!(Rgb::from_hex(&out).is_some());
+        assert_ne!(out, "#ff0000");
+    }
+
+    #[test]
+    fn auto_lightness_darkens_light_color() {
+        let out = FilterRegistry::apply("auto_lightness", "#ffffff", &[]).unwrap();
+        assert_ne!(out, "#ffffff");
+    }
+
+    #[test]
+    fn invalid_hex_falls_back_to_input() {
+        assert_eq!(apply("hex_raw", "not-a-color"), "not-a-color");
+    }
+
+    #[test]
+    fn unknown_filter_errors() {
+        assert!(FilterRegistry::apply("nope", "#ff0000", &[]).is_err());
     }
 }

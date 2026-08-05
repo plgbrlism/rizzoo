@@ -1,0 +1,20 @@
+# Example config for the rizzoo example suite.
+# Run with: ./example/run.sh
+# All paths below are relative to the repo root (run.sh cd's there).
+
+style = "expressive"
+light = false
+contrast = "medium"
+prefer = "darkness"
+
+[wallpaper]
+set = false
+command = "echo 'wallpaper: {{ image }}'"
+
+[custom_colors]
+accent    = { color = "#e06c75", blend = true }
+highlight = { color = "#61afef", blend = false }
+
+[test-all]
+template = "test-all-filters.tpl"
+output   = "example/output/all-filters.txt"

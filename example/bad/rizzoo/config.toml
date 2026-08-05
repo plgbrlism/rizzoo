@@ -1,0 +1,8 @@
+# Minimal config for the error-path example.
+# Run with: ./example/run-bad.sh
+# The template referenced here is intentionally broken — see
+# example/bad/rizzoo/templates/error-cases.tpl
+
+[errors]
+template = "error-cases.tpl"
+output   = "example/output/errors.txt"

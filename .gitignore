@@ -3,3 +3,7 @@
 # Added by cargo
 
 /target
+
+# example suite generated artifacts
+/example/.cache/
+/example/output/
