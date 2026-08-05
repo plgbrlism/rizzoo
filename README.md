@@ -7,13 +7,15 @@
   <img alt="version" src="https://img.shields.io/crates/v/rizzoo?color=2dd4bf&style=for-the-badge">
   <img alt="stars" src="https://img.shields.io/github/stars/plgbrlism/rizzoo?color=2dd4bf&style=for-the-badge">
   <br>
-  <a href="#installation">Installation</a>
+  <a href="#showcase">Showcase</a>
   |
   <a href="#usage">Usage</a>
   |
   <a href="#configuration">Configuration</a>
   |
   <a href="#templates">Templates</a>
+  |
+  <a href="#installation">Installation</a>
   |
   <a href="#acknowledgements">Acknowledgements</a>
 </div>
@@ -22,27 +24,24 @@
 
 ## Features
 
-- **Material 3 Expressive** — M3 + base16 palette from any image, URL, or hex color
-- **Winnow-based template engine** — minimal and simple color manipulation
-- **25+ color filters** — `hex`, `rgb`, `hsl`, `lighten`, `darken`, `blend`, `harmonize`, `ensure_contrast`, and more...
-- **templates & config.toml** — define templates, output paths, post hooks, and general configurations
-- **Style blending** — mix two M3 styles at any ratio (e.g. 70% vibrant + 30% expressive)
-- **Cross-platform wallpaper** — feh (X11), swaybg (Wayland), osascript (macOS), Windows native
-- **SHA256 color caching** — identical images never regenerate
-- **Live reload** — watch for changes and re-render automatically
-
-## Installation
-
-```sh
-cargo install rizzoo
-```
-
-From source:
-
-```sh
-git clone https://github.com/plgbrlism/rizzoo && cd rizzoo
-cargo build --release
-```
+- **Material 3 Expressive** 
+	- M3 + base16 palette from any image, URL, or hex color
+- **Winnow-based Template Engine** 
+	- minimal and simple color manipulation
+- **Source Color Picking**
+	- choose the source color from the top 4 optimal seed colors.
+- **25+ Color Filters** 
+	- `hex`, `rgb`, `hsl`, `lighten`, `darken`, `blend`, `harmonize`, `ensure_contrast`, and more...
+- **Templating & Configuration Files** 
+	- define templates, output paths, post hooks, and general configurations
+- **Style Blending** 
+	- mix two M3 styles at any ratio (e.g. 70% vibrant + 30% expressive)
+- **Cross-platform Wallpaper Wrappers** 
+	- feh (X11), swaybg (Wayland), osascript (macOS), Windows native
+- **SHA256 Color Caching** 
+	- identical images never regenerate
+- **Live Reload** 
+	- watch for changes and re-render automatically
 
 ## Usage
 
@@ -60,7 +59,7 @@ rizzoo -u "https://example.com/wall.jpg" -r -o
 rizzoo --init
 ```
 
-<details><summary>Full flag reference</summary>
+<details><summary>View Full Reference</summary>
 
 ```
 Usage: rizzoo [OPTIONS]
@@ -121,13 +120,18 @@ post_hook = "pkill -SIGUSR1 alacritty"
 ## Templates
 
 Templates live in `~/.config/rizzoo/templates/`. `-r` renders them to cache, `-o` writes them to each entry's `output` path.
-*Remember: Ms.`-o` or `--output` is dependent on Mr. `-r` or `--render`*
+
+
+*Remember: Mr.`-o` or `--output` is dependent on Ms. `-r` or `--render`*
 
 ### Variables
 
 Every Material role is a hex string: `{{ primary }}`, `{{ on_primary }}`, `{{ surface }}`, `{{ background }}`, `{{ outline }}`, `{{ error }}`… plus `{{ base00 }}`–`{{ base15 }}`, the `colors` array, `{{ custom_<name> }}`, and `{{ wallpaper }}`.
 
 ### Filters
+
+<details>
+<summary>View Table</summary>
 
 | Filter | Syntax | Output |
 |--------|---------|--------|
@@ -148,7 +152,9 @@ Every Material role is a hex string: `{{ primary }}`, `{{ on_primary }}`, `{{ su
 | `set_hue` / `set_saturation` / `set_lightness` | `{{ primary:set_hue(180) }}` | forced channel |
 | `set_red` / `set_green` / `set_blue` | `{{ primary:set_red(255) }}` | forced channel |
 
-Chain filters: `{{ primary:darken(0.1):hex_raw }}`. Bare `%var` args resolve to other template variables.
+</details>
+
+All chainable via colon `:` ➔ `{{ primary:darken(0.1):hex_raw }}`. Bare `%var` args resolve to other template variables.
 
 ### For loop
 
@@ -160,6 +166,7 @@ Chain filters: `{{ primary:darken(0.1):hex_raw }}`. Bare `%var` args resolve to 
 ### Example
 
 ```css
+/* material.css */
 :root {
   --md-sys-color-primary: {{ primary }};
   --md-sys-color-on-primary: {{ on_primary }};
@@ -167,14 +174,20 @@ Chain filters: `{{ primary:darken(0.1):hex_raw }}`. Bare `%var` args resolve to 
 }
 ```
 
-See [`example/`](example/) for a runnable template feature tour.
+Check [`example/`](example/) for a sandboxed testing script.
 
-## Roadmap
+## Installation
 
-- [ ] documentation site
-- [ ] `--continue-on-error` processing templates
-- [ ] sequence generation for tty (source via shell to apply)
-- [ ] color templates for applications
+```sh
+cargo install rizzoo
+```
+
+From source:
+
+```sh
+git clone https://github.com/plgbrlism/rizzoo && cd rizzoo
+cargo build --release
+```
 
 ## Acknowledgements
 
