@@ -20,31 +20,3 @@
 # template = "alacritty.tmpl"
 # output   = "~/.config/alacritty/colors.toml"
 # post_hook = "pkill -SIGUSR1 alacritty"
-
-# [kitty]
-# template = "kitty.tmpl"
-# output   = "~/.config/kitty/colors.conf"
-# post_hook = "kill -SIGUSR1 $(pidof kitty)"
-
-# [waybar]
-# template = "waybar.tmpl"
-# output   = "~/.config/waybar/style.css"
-# post_hook = "pkill -SIGUSR2 waybar"
-
-# [rofi]
-# template = "rofi.tmpl"
-# output   = "~/.config/rofi/colors.rasi"
-
-# [sway]
-# template = "sway.tmpl"
-# output   = "~/.config/sway/colors"
-# post_hook = "swaymsg reload"
-
-# [hyprland]
-# template = "hyprland.tmpl"
-# output   = "~/.config/hypr/colors.conf"
-# post_hook = "hyprctl reload"
-
-# [wezterm]
-# template = "wezterm.tmpl"
-# output   = "~/.config/wezterm/colors.toml"

@@ -1,8 +1,20 @@
 [package]
 name = "rizzoo"
-version = "0.6.7"
+version = "0.6.8"
 edition = "2024"
 authors = ["plgbrlism"]
+description = "a cross platform color generation tool implementing Material 3 Expressive"
+repository = "https://github.com/plgbrlism/rizzoo"
+license = "MIT"
+categories = ["command-line-utilities"]
+keywords = ["cli", "material-you", "color-scheme"]
+exclude = [
+    "assets/showcase.gif",
+    "assets/showcase.tape",
+    "assets/showcase.webp",
+    "assets/ukiir.svg",
+    "assets/rizzoo.svg",
+]
 
 [dependencies]
 clap = { version = "4.6.4", features = ["derive"] }
