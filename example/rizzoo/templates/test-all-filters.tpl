@@ -7,7 +7,7 @@
 # Context variables:
 #   Material roles as hex:  primary, on_primary, surface, background,
 #                           outline, error, tertiary, ... (all MaterialRoles)
-#   Base16 palette:         color0 .. color15
+#   Base16 palette:         base00 .. base15
 #   Base16 array:           the colors array (see the for loop below)
 #   Custom colors:          custom_accent, custom_highlight
 #   Wallpaper path:         wallpaper
@@ -63,8 +63,8 @@ colors (16 lines):
 {{#for c in colors }}{{ c }}
 {{/c }}
 
-color0/color7/color8/color15:
-{{ color0 }} {{ color7 }} {{ color8 }} {{ color15 }}
+base00/base07/base08/base15:
+{{ base00 }} {{ base07 }} {{ base08 }} {{ base15 }}
 
 # === CUSTOM COLORS ===
 custom_accent:    {{ custom_accent }}

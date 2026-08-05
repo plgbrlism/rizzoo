@@ -8,13 +8,13 @@
   <img alt="stars" src="https://img.shields.io/github/stars/plgbrlism/rizzoo?color=2dd4bf&style=for-the-badge">
   <br>
   <a href="#installation">Installation</a>
-  ·
+  |
   <a href="#usage">Usage</a>
-  ·
+  |
   <a href="#configuration">Configuration</a>
-  ·
+  |
   <a href="#templates">Templates</a>
-  ·
+  |
   <a href="#acknowledgements">Acknowledgements</a>
 </div>
 
@@ -22,10 +22,10 @@
 
 ## Features
 
-- **Material 3 Expressive** — full M3 palette + base16 from any image, URL, or hex color
-- **Winnow-based template engine** — purpose-built for colors, fast and minimal
-- **25+ color filters** — `hex`, `rgb`, `hsl`, `lighten`, `darken`, `blend`, `harmonize`, `ensure_contrast`, and more, chainable
-- **Config-driven output** — TOML sections define templates, output paths, and post-hooks
+- **Material 3 Expressive** — M3 + base16 palette from any image, URL, or hex color
+- **Winnow-based template engine** — minimal and simple color manipulation
+- **25+ color filters** — `hex`, `rgb`, `hsl`, `lighten`, `darken`, `blend`, `harmonize`, `ensure_contrast`, and more...
+- **templates & config.toml** — define templates, output paths, post hooks, and general configurations
 - **Style blending** — mix two M3 styles at any ratio (e.g. 70% vibrant + 30% expressive)
 - **Cross-platform wallpaper** — feh (X11), swaybg (Wayland), osascript (macOS), Windows native
 - **SHA256 color caching** — identical images never regenerate
@@ -96,15 +96,15 @@ Options:
 
 ## Configuration
 
-`rizzoo` reads `~/.config/rizzoo/config.toml`. `rizzoo --init` generates a default with every option commented.
+`rizzoo` reads `~/.config/rizzoo/config.toml`. `rizzoo --init` generates a sane default with every option commented.
 
 ```toml
-style = "expressive"
+style = "tonal-spot"
 light = false
-contrast = "medium"
+contrast = "standard"
 
 [wallpaper]
-set = true
+set = false
 command = "swaybg -i {{ image }} -m fill"
 
 [custom_colors]
@@ -116,19 +116,20 @@ output   = "~/.config/alacritty/colors.toml"
 post_hook = "pkill -SIGUSR1 alacritty"
 ```
 
-`post_hook` runs after the template is written. Set `enabled = false` to skip an entry.
+`post_hook` runs after the template is written. Add `enabled = false` to skip an entry.
 
 ## Templates
 
 Templates live in `~/.config/rizzoo/templates/`. `-r` renders them to cache, `-o` writes them to each entry's `output` path.
+*Remember: Ms.`-o` or `--output` is dependent on Mr. `-r` or `--render`*
 
 ### Variables
 
-Every Material role is a hex string: `{{ primary }}`, `{{ on_primary }}`, `{{ surface }}`, `{{ background }}`, `{{ outline }}`, `{{ error }}`… plus `{{ color0 }}`–`{{ color15 }}`, the `colors` array, `{{ custom_<name> }}`, and `{{ wallpaper }}`.
+Every Material role is a hex string: `{{ primary }}`, `{{ on_primary }}`, `{{ surface }}`, `{{ background }}`, `{{ outline }}`, `{{ error }}`… plus `{{ base00 }}`–`{{ base15 }}`, the `colors` array, `{{ custom_<name> }}`, and `{{ wallpaper }}`.
 
 ### Filters
 
-| Filter | Example | Output |
+| Filter | Syntax | Output |
 |--------|---------|--------|
 | `hex` | `{{ primary:hex }}` | `#a6ebc3` |
 | `hex_raw` | `{{ primary:hex_raw }}` | `a6ebc3` |
@@ -149,7 +150,7 @@ Every Material role is a hex string: `{{ primary }}`, `{{ on_primary }}`, `{{ su
 
 Chain filters: `{{ primary:darken(0.1):hex_raw }}`. Bare `%var` args resolve to other template variables.
 
-### For loops
+### For loop
 
 ```
 {{#for c in colors }}{{ c:hex_raw }}
@@ -170,19 +171,19 @@ See [`example/`](example/) for a runnable template feature tour.
 
 ## Roadmap
 
-- [ ] GitHub Pages docs site
-- [ ] `--continue-on-error`
-- [ ] Nested for loops
-- [ ] Shell completions
+- [ ] documentation site
+- [ ] `--continue-on-error` processing templates
+- [ ] sequence generation for tty (source via shell to apply)
+- [ ] color templates for applications
 
 ## Acknowledgements
 
-- [matugen](https://github.com/InioX/matugen) — Material You color generation; template engine inspiration
-- [pywal](https://github.com/dylanaraps/pywal) — wallpaper-based color theming
-- [mcu-material-color](https://crates.io/crates/mcu-material-color) — Material color science
-- [hellwal](https://github.com/danihek/hellwal) — fast palette generator
-- [cwal](https://github.com/nitinbhat972/cwal) — dynamic color scheme generation
-- [wallpaper.rs](https://github.com/reujab/wallpaper.rs) — cross-platform wallpaper handling
+- [matugen](https://github.com/InioX/matugen) — material theming inspiration
+- [pywal](https://github.com/dylanaraps/pywal) — popularized wallpaper-based color theming
+- [mcu-material-color](https://crates.io/crates/mcu-material-color) — rust port of google material color utilities
+- [wallust](https://codeberg.org/explosion-mental/wallust.git)
+- [hellwal](https://github.com/danihek/hellwal) 
+- [cwal](https://github.com/nitinbhat972/cwal)
 
 ## License
 

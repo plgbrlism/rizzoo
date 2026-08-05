@@ -69,7 +69,7 @@ impl TemplateRenderer {
 
         let base16_hex: Vec<String> = scheme.base16.iter().map(|c| c.to_hex()).collect();
         for (i, hex) in base16_hex.iter().enumerate() {
-            ctx.vars.insert(format!("color{}", i), hex.clone());
+            ctx.vars.insert(format!("base{:02}", i), hex.clone());
         }
         ctx.arrays.insert("colors".into(), base16_hex);
 
