@@ -38,16 +38,12 @@ impl Rgb {
         Some(Self { r, g, b })
     }
 
-    pub fn to_raw_rgb(&self) -> String {
-        format!("{},{},{}", self.r, self.g, self.b)
-    }
-
     pub fn to_css_rgb(&self) -> String {
-        format!("Rgb{}, {}, {}", self.r, self.g, self.b)
+        format!("rgb({}, {}, {})", self.r, self.g, self.b)
     }
 
     pub fn to_css_rgba(&self, alpha: &str) -> String {
-        format!("Rgba{}, {}, {}, {}", self.r, self.g, self.b, alpha)
+        format!("rgba({}, {}, {}, {})", self.r, self.g, self.b, alpha)
     }
 
     pub fn to_argb_u32(&self) -> u32 {
@@ -62,9 +58,14 @@ impl Rgb {
         }
     }
 
-    pub fn to_raw_hsl(&self) -> String {
+    pub fn to_hsl(&self) -> String {
         let (h, s, l) = self.to_tuple_hsl();
-        format!("{:.0},{:.0}%,{:.0}%", h, s, l)
+        format!("hsl({:.0}, {:.0}%, {:.0}%)", h, s, l)
+    }
+
+    pub fn to_hsla(&self, alpha: &str) -> String {
+        let (h, s, l) = self.to_tuple_hsl();
+        format!("hsla({:.0}, {:.0}%, {:.0}%, {})", h, s, l, alpha)
     }
 
     /// ~~ Color Space ~~

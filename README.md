@@ -179,12 +179,11 @@ Every Material role is a hex string: `{{ primary }}`, `{{ on_primary }}`, `{{ su
 
 | Filter | Syntax | Output |
 |--------|---------|--------|
-| `hex` | `{{ primary:hex }}` | `#a6ebc3` |
 | `hex_raw` | `{{ primary:hex_raw }}` | `a6ebc3` |
-| `rgb` | `{{ primary:rgb }}` | `166,235,195` |
-| `rgb_css` | `{{ primary:rgb_css }}` | `Rgb166, 235, 195` |
-| `rgba` | `{{ primary:rgba(0.5) }}` | `Rgba166, 235, 195, 0.5` |
-| `hsl` | `{{ primary:hsl }}` | `150,59%,79%` |
+| `rgb` | `{{ primary:rgb }}` | `rgb(166, 235, 195)` |
+| `rgba` | `{{ primary:rgba(0.5) }}` | `rgba(166, 235, 195, 0.5)` |
+| `hsl` | `{{ primary:hsl }}` | `hsl(150, 59%, 79%)` |
+| `hsla` | `{{ primary:hsla(0.5) }}` | `hsla(150, 59%, 79%, 0.5)` |
 | `hue` / `saturation` / `lightness` | `{{ primary:hue }}` | `150` |
 | `r` / `g` / `b` | `{{ primary:r }}` | `166` |
 | `lighten` / `darken` | `{{ primary:lighten(0.1) }}` | adjusted color |
@@ -193,8 +192,6 @@ Every Material role is a hex string: `{{ primary }}`, `{{ on_primary }}`, `{{ su
 | `blend` | `{{ primary:blend(%secondary, 0.5) }}` | CAM16-UCS blend |
 | `harmonize` | `{{ primary:harmonize(%tertiary) }}` | hue-shifted toward target |
 | `ensure_contrast` | `{{ on_surface:ensure_contrast(%surface, 4.5) }}` | WCAG-safe color |
-| `set_hue` / `set_saturation` / `set_lightness` | `{{ primary:set_hue(180) }}` | forced channel |
-| `set_red` / `set_green` / `set_blue` | `{{ primary:set_red(255) }}` | forced channel |
 
 </details>
 

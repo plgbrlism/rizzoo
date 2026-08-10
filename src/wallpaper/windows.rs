@@ -7,7 +7,7 @@ const SPIF_UPDATEINIFILE: u32 = 0x01;
 const SPIF_SENDCHANGE: u32 = 0x02;
 
 #[allow(non_snake_case)]
-extern "system" {
+unsafe extern "system" {
     fn SystemParametersInfoW(uiAction: u32, uiParam: u32, pvParam: *const u16, fWinIni: u32)
     -> i32;
 }

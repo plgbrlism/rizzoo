@@ -5,12 +5,11 @@ pub struct FilterRegistry;
 impl FilterRegistry {
     pub fn apply(name: &str, value: &str, args: &[String]) -> Result<String, String> {
         match name {
-            "hex" => Ok(Self::pass(value)),
             "hex_raw" => Ok(Self::hex_raw(value)),
             "rgb" => Ok(Self::rgb(value)),
-            "rgb_css" => Ok(Self::rgb_css(value)),
             "rgba" => Ok(Self::rgba(value, args.first())),
             "hsl" => Ok(Self::hsl(value)),
+            "hsla" => Ok(Self::hsla(value, args.first())),
             "hue" => Ok(Self::hue(value)),
             "saturation" => Ok(Self::saturation(value)),
             "lightness" => Ok(Self::lightness(value)),
@@ -29,13 +28,6 @@ impl FilterRegistry {
             "harmonize" => Self::with_target(value, args, Self::harmonize_op),
             "blend" => Self::with_blend(value, args),
             "ensure_contrast" => Self::with_contrast(value, args),
-
-            "set_hue" => Self::with_val(value, args, Self::set_hue_op),
-            "set_saturation" => Self::with_val(value, args, Self::set_saturation_op),
-            "set_lightness" => Self::with_val(value, args, Self::set_lightness_op),
-            "set_red" => Self::with_val(value, args, Self::set_red_op),
-            "set_green" => Self::with_val(value, args, Self::set_green_op),
-            "set_blue" => Self::with_val(value, args, Self::set_blue_op),
             _ => Err(format!("unknown filter: {name}")),
         }
     }
@@ -44,20 +36,12 @@ impl FilterRegistry {
         Rgb::from_hex(value).ok_or_else(|| format!("invalid hex color: {value}"))
     }
 
-    fn pass(value: &str) -> String {
-        value.to_string()
-    }
     fn hex_raw(value: &str) -> String {
         Self::parse_rgb(value)
             .map(|c| c.to_raw_hex())
             .unwrap_or_else(|_| value.to_string())
     }
     fn rgb(value: &str) -> String {
-        Self::parse_rgb(value)
-            .map(|c| c.to_raw_rgb())
-            .unwrap_or_else(|_| value.to_string())
-    }
-    fn rgb_css(value: &str) -> String {
         Self::parse_rgb(value)
             .map(|c| c.to_css_rgb())
             .unwrap_or_else(|_| value.to_string())
@@ -70,7 +54,13 @@ impl FilterRegistry {
     }
     fn hsl(value: &str) -> String {
         Self::parse_rgb(value)
-            .map(|c| c.to_raw_hsl())
+            .map(|c| c.to_hsl())
+            .unwrap_or_else(|_| value.to_string())
+    }
+    fn hsla(value: &str, alpha: Option<&String>) -> String {
+        let a = alpha.map(|s| s.as_str()).unwrap_or("1.0");
+        Self::parse_rgb(value)
+            .map(|c| c.to_hsla(a))
             .unwrap_or_else(|_| value.to_string())
     }
     fn hue(value: &str) -> String {
@@ -115,15 +105,6 @@ impl FilterRegistry {
             .unwrap_or(0.1);
         let color = Self::parse_rgb(value)?;
         Ok(op(&color, amount).to_hex())
-    }
-
-    fn with_val(value: &str, args: &[String], op: fn(&Rgb, f64) -> Rgb) -> Result<String, String> {
-        let val = args
-            .first()
-            .and_then(|a| a.parse::<f64>().ok())
-            .ok_or_else(|| "expected numeric argument".to_string())?;
-        let color = Self::parse_rgb(value)?;
-        Ok(op(&color, val).to_hex())
     }
 
     fn with_target(
@@ -182,41 +163,20 @@ impl FilterRegistry {
         crate::color::blend::harmonize_color(color, target)
     }
 
-    fn set_hue_op(color: &Rgb, val: f64) -> Rgb {
-        let (_, s, l) = color.to_tuple_hsl();
-        Rgb::from_hsl_tuple(val.clamp(0.0, 360.0), s, l)
-    }
-
-    fn set_saturation_op(color: &Rgb, val: f64) -> Rgb {
-        let (h, _, l) = color.to_tuple_hsl();
-        Rgb::from_hsl_tuple(h, val.clamp(0.0, 100.0), l)
-    }
-
-    fn set_lightness_op(color: &Rgb, val: f64) -> Rgb {
-        let (h, s, _) = color.to_tuple_hsl();
-        Rgb::from_hsl_tuple(h, s, val.clamp(0.0, 100.0))
-    }
-
-    fn set_red_op(color: &Rgb, val: f64) -> Rgb {
-        Rgb::rgb(val.clamp(0.0, 255.0) as u8, color.g, color.b)
-    }
-
-    fn set_green_op(color: &Rgb, val: f64) -> Rgb {
-        Rgb::rgb(color.r, val.clamp(0.0, 255.0) as u8, color.b)
-    }
-
-    fn set_blue_op(color: &Rgb, val: f64) -> Rgb {
-        Rgb::rgb(color.r, color.g, val.clamp(0.0, 255.0) as u8)
-    }
-
     fn with_blend(value: &str, args: &[String]) -> Result<String, String> {
-        if args.len() < 2 {
-            return Err("blend requires target color and amount".to_string());
+        if args.is_empty() {
+            return Err("blend requires target color".to_string());
         }
         let target = Self::parse_rgb(&args[0])?;
-        let amount = args[1]
-            .parse::<f64>()
-            .map_err(|_| "invalid blend amount".to_string())?;
+        let amount = if args.len() > 1 {
+            args[1]
+                .parse::<f64>()
+                .map_err(|_| "invalid blend amount".to_string())?
+                // cap below 1.0 — at 1.0 the blend is just the target, pointless
+                .clamp(0.0, 0.99)
+        } else {
+            0.5
+        };
         let color = Self::parse_rgb(value)?;
         Ok(crate::color::blend::blend_colors(&color, &target, amount).to_hex())
     }

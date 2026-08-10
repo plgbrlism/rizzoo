@@ -14,8 +14,8 @@
 #   undefined array in for loop
 {{#for x in nonexistent }}{{ x }}{{/x }}
 #
-#   blend with a missing amount arg
-{{ primary:blend("#ff0000") }}
+#   blend with a nonexistent target color
+{{ primary:blend(%does_not_exist) }}
 #
 #   ensure_contrast with a missing ratio arg
 {{ primary:ensure_contrast(%surface) }}

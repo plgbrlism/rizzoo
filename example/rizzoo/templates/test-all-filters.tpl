@@ -20,12 +20,11 @@ background:     {{ background }}
 on_surface:     {{ on_surface }}
 
 # === FORMAT FILTERS ===
-hex:            {{ primary:hex }}
 hex_raw:        {{ primary:hex_raw }}
 rgb:            {{ primary:rgb }}
-rgb_css:        {{ primary:rgb_css }}
-rgba(0.5):      {{ primary:rgba(0.5) }}
+rgba(0.5):      {{ primary:rgba(1.0) }}
 hsl:            {{ primary:hsl }}
+hsla:           {{ primary:hsla(1.0) }}
 hue:            {{ primary:hue }}
 saturation:     {{ primary:saturation }}
 lightness:      {{ primary:lightness }}
@@ -39,24 +38,18 @@ saturate(0.2):  {{ primary:saturate(0.2) }}
 desaturate(0.2): {{ primary:desaturate(0.2) }}
 auto_lightness: {{ primary:auto_lightness(0.1) }}
 
-# === CHANNEL SETTERS ===
-set_hue(180):          {{ primary:set_hue(180) }}
-set_saturation(50):    {{ primary:set_saturation(50) }}
-set_lightness(30):     {{ primary:set_lightness(30) }}
-set_red(255):          {{ primary:set_red(255) }}
-set_green(255):        {{ primary:set_green(255) }}
-set_blue(255):         {{ primary:set_blue(255) }}
-
 # === TRANSFORMS ===
 invert:         {{ primary:invert }}
 grayscale:      {{ primary:grayscale }}
 
 # === BLEND / HARMONIZE / ENSURE_CONTRAST ===
 # args: quoted hex strings, bare %vars (resolved from context), or numbers
-blend %secondary 0.5:  {{ primary:blend(%secondary, 0.5) }}
-blend "#ff0000" 0.5:   {{ primary:blend("#ff0000", 0.5) }}
-harmonize %tertiary:   {{ primary:harmonize(%tertiary) }}
-ensure_contrast:       {{ on_surface:ensure_contrast(%surface, 4.5) }}
+blend %secondary (50/50):  {{ primary:blend(%secondary) }}
+blend %secondary 0.5:      {{ primary:blend(%secondary, 0.5) }}
+blend %secondary 0.3:      {{ primary:blend(%secondary, 0.3) }}
+blend "#ff0000" 0.5:       {{ primary:blend("#ff0000", 0.5) }}
+harmonize %tertiary:       {{ primary:harmonize(%tertiary) }}
+ensure_contrast:           {{ on_surface:ensure_contrast(%surface, 4.5) }}
 
 # === BASE16: FOR LOOP OVER THE COLORS ARRAY ===
 colors (16 lines):
