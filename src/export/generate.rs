@@ -156,21 +156,6 @@ pub fn preview(scheme: &ColorScheme, seed_colors: Option<&Vec<Rgb>>, pick: usize
         }
     }
 
-    builder.push_record(vec![
-        "\n\nBase16 Palette".bold().to_string(),
-        "".into(),
-        "".into(),
-        "".into(),
-    ]);
-    for (i, c) in scheme.base16.iter().enumerate() {
-        builder.push_record(vec![
-            swatch(c),
-            format!("base{:02}", i),
-            c.to_hex(),
-            "".into(),
-        ]);
-    }
-
     let mut table = builder.build();
     table
         .with(Style::blank())

@@ -11,9 +11,6 @@
 #   unknown filter
 {{ primary:unknown_filter }}
 #
-#   undefined array in for loop
-{{#for x in nonexistent }}{{ x }}{{/x }}
-#
 #   blend with a nonexistent target color
 {{ primary:blend(%does_not_exist) }}
 #

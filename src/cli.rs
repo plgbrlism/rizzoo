@@ -22,26 +22,26 @@ pub struct Cli {
 
     #[arg(
         short = 'u', long = "image-url", value_name = "URL",
-        conflicts_with_all = ["image", "restore"],
+        conflicts_with_all = ["image", "reload_scheme"],
         help = "url link of an image as the color source"
     )]
     pub image_url: Option<String>,
 
     #[arg(
         short = 'c', long = "color", value_name = "HEX",
-        conflicts_with_all = ["image", "image_url", "restore"],
+        conflicts_with_all = ["image", "image_url", "reload_scheme"],
         help = "a color of your choice in hex format"
     )]
     pub color: Option<String>,
 
     #[arg(
         short = 'R',
-        long = "restore-wallpaper",
+        long = "reload-scheme",
         default_value_t = false,
         conflicts_with_all = ["image", "image_url"],
-        help = "restore last wallpaper"
+        help = "reload the last generated color scheme from cache"
     )]
-    pub restore: bool,
+    pub reload_scheme: bool,
 
     #[arg(
         short = 'p',
@@ -196,14 +196,14 @@ impl Cli {
         let has_image = self.image.is_some() || self.image_url.is_some();
         if !has_image
             && self.color.is_none()
-            && !self.restore
+            && !self.reload_scheme
             && !self.output
             && self.output_to.is_none()
             && !self.render
             && !self.preview
         {
             return Err(
-                "what to do?\n [-i image, -u url, -c color, -R restore, -m fill templates, -l output apps, -p preview]".into()
+                "what to do?\n [-i image, -u url, -c color, -R reload-scheme, -m fill templates, -l output apps, -p preview]".into()
             );
         }
         if self.prefer.is_some() && !has_image {
@@ -309,7 +309,7 @@ mod tests {
     }
 
     #[test]
-    fn restore_conflicts_with_image() {
+    fn reload_scheme_conflicts_with_image() {
         assert!(Cli::try_parse_from(["rizzoo", "-R", "-i", "a.png"]).is_err());
     }
 

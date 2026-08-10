@@ -87,9 +87,9 @@ impl State {
             Self::from_color(cli, paths, config, hex)
         } else if let Some(image_arg) = Self::resolve_image(cli)? {
             Self::from_image(cli, paths, config, &image_arg)
-        } else if cli.restore {
+        } else if cli.reload_scheme {
             let scheme = export::json::read(paths)?;
-            step(cli, "restore: loaded last scheme");
+            step(cli, "reload: loaded last scheme");
             Ok(GeneratedScheme {
                 scheme,
                 is_new: false,

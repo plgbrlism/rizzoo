@@ -79,8 +79,8 @@ impl RoleExtractor {
 
             background: rgb(&MaterialDynamicColors::background(), scheme),
             on_background: rgb(&MaterialDynamicColors::on_background(), scheme),
-            //shadow: rgb(&MaterialDynamicColors::shadow(), scheme),
-            //scrim: rgb(&MaterialDynamicColors::scrim(), scheme),
+            shadow: rgb(&MaterialDynamicColors::shadow(), scheme),
+            scrim: rgb(&MaterialDynamicColors::scrim(), scheme),
         }
     }
 }

@@ -39,23 +39,23 @@
 </h2>
 
 - **Material 3 Expressive** 
-	- M3 + base16 palette from any image, URL, or hex color
+	- M3 palette from any image, URL, or hex color
 - **Source Color Picking**
 	- choose the preferred source color from the most optimal ones.
 - **Scheme Blending** 
 	- mix two Material 3 styles
+- **Templating & Configuration** 
+	- define templates, output paths, post hooks, and general configurations
 - **Winnow-based Template Engine** 
 	- minimal and simple color manipulation
-- **25+ Color Filters** 
+- **Intuitive Color Filters** 
 	- `hex`, `rgb`, `hsl`, `lighten`, `darken`, `blend`, `harmonize`, `ensure_contrast`, and more...
-- **Templating & Configuration Files** 
-	- define templates, output paths, post hooks, and general configurations
 - **Cross-platform Wallpaper Wrappers** 
 	- Windows, Macos, X11(Linux), Wayland(Linux)
 - **Caching** 
 	- identical images never regenerate
 - **Live Reload** 
-	- watch for changes and re-render automatically
+	- watch for changes and renders automatically
 
 <h2 id="showcase">
      <sub>
@@ -101,23 +101,23 @@ Options:
   -i, --image <PATH>         image path as color source
   -u, --image-url <URL>      url link of an image as the color source
   -c, --color <HEX>          a color of your choice in hex format
-  -R, --restore-wallpaper    restore last wallpaper
+  -R, --reload-scheme        reload the last generated color scheme
   -p, --preview              print palette table
   -r, --render               fill template files with colors
   -o, --output               write all processed templates to output
       --output-to <APP>      write specific processed template to output
   -w, --wallpaper            set as desktop wallpaper
   -q, --silent               no process printed on screen
-  -n, --dry-run              rendering and linking flags won't be applied
+  -n, --dry-run              read and write flags won't be applied
   -S, --style <STYLE>        [default: tonal-spot] [possible values: tonal-spot, neutral, vibrant, expressive, rainbow, fruit-salad, monochrome, fidelity, content]
       --light                generate light variant colors
   -W, --watch                reload when files change
   -t, --contrast <LEVEL>     increase color contrast [default: standard] [possible values: standard, medium, high]
   -P, --pick <N>             explicitly choose a source color
   -e, --prefer <MODE>        auto-pick source color based on... [possible values: darkness, lightness, saturation]
-      --open-picker          explicitly open the interactive color picker
+      --open-picker          open the interactive color picker
   -b, --blend-style <STYLE>  blend with another style (requires --blend-ratio) [possible values: tonal-spot, neutral, vibrant, expressive, rainbow, fruit-salad, monochrome, fidelity, content]
-      --blend-ratio <RATIO>  blend ratio 0.0-1.0 when using --blend-style [default: 0.5]
+      --blend-ratio <RATIO>  blend ratio 0.1-0.9 when using --blend-style [default: 0.5]
       --init                 generate configuration file
       --init-overwrite       overwrite configuration file with defaults
   -h, --help                 Print help
@@ -170,7 +170,7 @@ Templates live in `~/.config/rizzoo/templates/`. `-r` renders them to cache, `-o
 
 ### Variables
 
-Every Material role is a hex string: `{{ primary }}`, `{{ on_primary }}`, `{{ surface }}`, `{{ background }}`, `{{ outline }}`, `{{ error }}`… plus `{{ base00 }}`–`{{ base15 }}`, the `colors` array, `{{ custom_<name> }}`, and `{{ wallpaper }}`.
+Every Material role is a hex string: `{{ primary }}`, `{{ on_primary }}`, `{{ surface }}`, `{{ background }}`, `{{ outline }}`, `{{ error }}`… plus `{{ shadow }}`, `{{ scrim }}`, `{{ custom_<name> }}`, and `{{ wallpaper }}`.
 
 ### Filters
 
@@ -196,13 +196,6 @@ Every Material role is a hex string: `{{ primary }}`, `{{ on_primary }}`, `{{ su
 </details>
 
 All chainable via colon `:` ➔ `{{ primary:darken(0.1):hex_raw }}`. Bare `%var` args resolve to other template variables.
-
-### For loop
-
-```
-{{#for c in colors }}{{ c:hex_raw }}
-{{/c }}
-```
 
 ### Example
 

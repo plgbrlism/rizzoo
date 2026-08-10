@@ -6,7 +6,6 @@ use crate::template::parser::{FilterArg, FilterCall, TemplateNode};
 #[derive(Debug, Clone, Default)]
 pub struct TemplateContext {
     pub vars: HashMap<String, String>,
-    pub arrays: HashMap<String, Vec<String>>,
 }
 
 impl TemplateContext {
@@ -16,11 +15,6 @@ impl TemplateContext {
 
     pub fn with_var(mut self, name: &str, value: &str) -> Self {
         self.vars.insert(name.to_string(), value.to_string());
-        self
-    }
-
-    pub fn with_array(mut self, name: &str, values: Vec<String>) -> Self {
-        self.arrays.insert(name.to_string(), values);
         self
     }
 }
@@ -42,11 +36,6 @@ impl TemplateEvaluator {
             TemplateNode::Variable { name, filters } => {
                 Self::evaluate_variable(name, filters, context)
             }
-            TemplateNode::ForBlock {
-                var_name,
-                collection,
-                body,
-            } => Self::evaluate_for_block(var_name, collection, body, context),
         }
     }
 
@@ -78,28 +67,6 @@ impl TemplateEvaluator {
             current = FilterRegistry::apply(&filter.name, &current, &args)?;
         }
         Ok(current)
-    }
-
-    fn evaluate_for_block(
-        var_name: &str,
-        collection: &str,
-        body: &[TemplateNode],
-        context: &TemplateContext,
-    ) -> Result<String, String> {
-        let items = context
-            .arrays
-            .get(collection)
-            .ok_or_else(|| format!("undefined array: {collection}"))?;
-
-        let mut output = String::new();
-        let mut child_ctx = context.clone();
-
-        for item in items {
-            child_ctx.vars.insert(var_name.to_string(), item.clone());
-            output.push_str(&Self::evaluate(body, &child_ctx)?);
-        }
-
-        Ok(output)
     }
 
     fn resolve_arg(arg: &FilterArg, context: &TemplateContext) -> String {

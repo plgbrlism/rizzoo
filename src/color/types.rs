@@ -245,15 +245,14 @@ pub struct MaterialRoles {
     pub inverse_primary: Rgb,
     pub background: Rgb,
     pub on_background: Rgb,
-    //pub shadow: Rgb,
-    //pub scrim: Rgb,
+    pub shadow: Rgb,
+    pub scrim: Rgb,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ColorScheme {
     pub wallpaper: String,
     pub roles: MaterialRoles,
-    pub base16: [Rgb; 16],
     pub seed_colors: Option<Vec<Rgb>>,
     #[serde(default)]
     pub pick: Option<usize>,
@@ -266,7 +265,6 @@ impl std::fmt::Debug for ColorScheme {
         f.debug_struct("ColorScheme")
             .field("wallpaper", &self.wallpaper)
             .field("roles", &self.roles)
-            .field("base16", &self.base16)
             .field("seed_colors", &self.seed_colors)
             .finish()
     }

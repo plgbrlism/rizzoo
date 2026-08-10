@@ -78,8 +78,8 @@ pub fn blend_roles(a: &MaterialRoles, b: &MaterialRoles, ratio: f64) -> Material
         inverse_primary,
         background,
         on_background,
-        //shadow,
-        //scrim,
+        shadow,
+        scrim,
     )
 }
 

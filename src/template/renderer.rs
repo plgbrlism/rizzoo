@@ -67,12 +67,6 @@ impl TemplateRenderer {
         ctx.vars
             .insert("wallpaper".into(), scheme.wallpaper.clone());
 
-        let base16_hex: Vec<String> = scheme.base16.iter().map(|c| c.to_hex()).collect();
-        for (i, hex) in base16_hex.iter().enumerate() {
-            ctx.vars.insert(format!("base{:02}", i), hex.clone());
-        }
-        ctx.arrays.insert("colors".into(), base16_hex);
-
         if let Some(custom) = custom_colors {
             for (name, color) in custom {
                 ctx.vars.insert(format!("custom_{}", name), color.to_hex());

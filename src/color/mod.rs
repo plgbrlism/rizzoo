@@ -1,4 +1,3 @@
-pub mod base16;
 pub mod blend;
 pub mod extract;
 pub mod roles;
