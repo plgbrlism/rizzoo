@@ -168,7 +168,7 @@ pub struct Cli {
         long = "blend-ratio",
         value_name = "RATIO",
         default_value_t = 0.5,
-        help = "blend ratio 0.0-1.0 when using --blend-style"
+        help = "blend ratio 0.1-0.9 when using --blend-style"
     )]
     pub blend_ratio: f64,
 
@@ -214,9 +214,107 @@ impl Cli {
                 return Err(format!("invalid format --color '#{hex}'"));
             }
         }
-        if self.blend_ratio < 0.0 || self.blend_ratio > 1.0 {
-            return Err("--blend-ratio must be between 0.0 and 1.0".into());
+        if self.blend_ratio < 0.1 || self.blend_ratio > 0.9 {
+            return Err("--blend-ratio must be between 0.1 and 0.9".into());
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::Parser;
+
+    fn parse(args: &[&str]) -> Cli {
+        let mut all = vec!["rizzoo"];
+        all.extend_from_slice(args);
+        Cli::parse_from(all)
+    }
+
+    fn valid(args: &[&str]) -> bool {
+        parse(args).validate().is_ok()
+    }
+
+    #[test]
+    fn init_alone_is_valid() {
+        assert!(valid(&["--init"]));
+    }
+
+    #[test]
+    fn init_overwrite_alone_is_valid() {
+        assert!(valid(&["--init-overwrite"]));
+    }
+
+    #[test]
+    fn init_conflicts_with_init_overwrite() {
+        assert!(Cli::try_parse_from(["rizzoo", "--init", "--init-overwrite"]).is_err());
+    }
+
+    #[test]
+    fn empty_invocation_errors() {
+        assert!(!valid(&[]));
+    }
+
+    #[test]
+    fn action_flags_alone_are_valid() {
+        // re-process the cached colors.json: each of these alone is a legit command
+        assert!(valid(&["--preview"]));
+        assert!(valid(&["--render"]));
+        assert!(valid(&["--output"]));
+        assert!(valid(&["--output-to", "alacritty"]));
+    }
+
+    #[test]
+    fn preview_with_source_is_valid() {
+        assert!(valid(&["-p", "-c", "#ff0000"]));
+    }
+
+    #[test]
+    fn invalid_hex_color_errors() {
+        assert!(!valid(&["-c", "not-a-hex"]));
+        assert!(valid(&["-c", "#ff0000"]));
+    }
+
+    #[test]
+    fn prefer_requires_image() {
+        assert!(!valid(&["-e", "darkness"]));
+        assert!(valid(&["-e", "darkness", "-i", "img.png"]));
+    }
+
+    #[test]
+    fn blend_ratio_out_of_bounds() {
+        let mut c = parse(&["-c", "#ffffff", "-b", "vibrant"]);
+        c.blend_ratio = 1.5;
+        assert!(c.validate().is_err());
+        c.blend_ratio = -0.1;
+        assert!(c.validate().is_err());
+        c.blend_ratio = 0.05;
+        assert!(c.validate().is_err(), "below minimum 0.10 must error");
+        c.blend_ratio = 0.995;
+        assert!(c.validate().is_err(), "above maximum 0.99 must error");
+        c.blend_ratio = 0.5;
+        assert!(c.validate().is_ok());
+    }
+
+    #[test]
+    fn pick_range_enforced_by_clap() {
+        assert!(Cli::try_parse_from(["rizzoo", "-p", "-c", "#fff", "-P", "99"]).is_err());
+        assert!(Cli::try_parse_from(["rizzoo", "-p", "-c", "#fff", "-P", "3"]).is_ok());
+    }
+
+    #[test]
+    fn image_conflicts_with_image_url() {
+        assert!(Cli::try_parse_from(["rizzoo", "-i", "a.png", "-u", "http://x/y.png"]).is_err());
+    }
+
+    #[test]
+    fn restore_conflicts_with_image() {
+        assert!(Cli::try_parse_from(["rizzoo", "-R", "-i", "a.png"]).is_err());
+    }
+
+    #[test]
+    fn preview_conflicts_with_silent() {
+        assert!(Cli::try_parse_from(["rizzoo", "-c", "#fff", "-p", "-q"]).is_err());
     }
 }
