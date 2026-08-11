@@ -1,4 +1,5 @@
 use crate::error::LRatio;
+use rand::seq::IndexedRandom;
 use std::path::{Path, PathBuf};
 
 const IMAGE_EXTENSIONS: &[&str] = &[
@@ -27,17 +28,15 @@ pub fn resolve(path: &Path) -> Result<PathBuf, LRatio> {
 }
 
 fn pick_from_dir(dir: &Path) -> Result<PathBuf, LRatio> {
-    std::fs::read_dir(dir)?
+    let images: Vec<PathBuf> = std::fs::read_dir(dir)?
         .filter_map(Result::ok)
         .map(|e| e.path())
         .filter(|p| p.is_file() && is_image(p))
-        .filter_map(|p| {
-            std::fs::metadata(&p)
-                .and_then(|m| m.modified())
-                .ok()
-                .map(|t| (p, t))
-        })
-        .max_by_key(|(_, t)| *t)
-        .map(|(p, _)| p)
+        .collect();
+
+    let mut random = rand::rng(); // refactor: instead of latest modified file, choose randomly from a valid directory
+    images
+        .choose(&mut random)
+        .cloned()
         .ok_or_else(|| LRatio::EmptyDir(dir.to_path_buf()))
 }
