@@ -22,9 +22,9 @@
   <br><br>
   <a href="#showcase">Showcase</a>
   |
-  <a href="#configuration">Configuration</a>
-  |
   <a href="#installation">Installation</a>
+  |
+  <a href="https://github.com/plgbrlism/rizzoo/wiki">Wiki</a>
   |
   <a href="#acknowledgements">Acknowledgements</a>
 </div>
