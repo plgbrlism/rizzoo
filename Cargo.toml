@@ -1,6 +1,6 @@
 [package]
 name = "rizzoo"
-version = "0.6.8"
+version = "0.6.9"
 edition = "2024"
 authors = ["plgbrlism"]
 description = "a cross platform color generation tool implementing Material 3 Expressive"
