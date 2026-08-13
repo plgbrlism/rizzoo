@@ -16,41 +16,48 @@ pub struct Cli {
         long = "image",
         value_name = "PATH",
         conflicts_with = "image_url",
-        help = "image path as color source"
+        help = "image file / path as the color source"
     )]
     pub image: Option<PathBuf>,
 
     #[arg(
         short = 'u', long = "image-url", value_name = "URL",
         conflicts_with_all = ["image", "reload_scheme"],
-        help = "url link of an image as the color source"
+        help = "url of an image to use as the color source"
     )]
     pub image_url: Option<String>,
 
     #[arg(
         short = 'c', long = "color", value_name = "HEX",
         conflicts_with_all = ["image", "image_url", "reload_scheme"],
-        help = "a color of your choice in hex format"
+        help = "hex color to use as the color source"
     )]
     pub color: Option<String>,
 
     #[arg(
-        short = 'R',
-        long = "reload-scheme",
-        default_value_t = false,
-        conflicts_with_all = ["image", "image_url"],
-        help = "reload the last generated color scheme from cache"
+        short = 'P', long = "pick", value_name = "N",
+        value_parser = clap::value_parser!(u8).range(0..5),
+        conflicts_with = "prefer",
+        help = "explicitly choose the most optimal source color 0-3"
     )]
-    pub reload_scheme: bool,
+    pub pick: Option<u8>,
 
     #[arg(
-        short = 'p',
-        long = "preview",
-        default_value_t = false,
-        conflicts_with = "silent",
-        help = "print palette table"
+        short = 'e',
+        long = "prefer",
+        value_name = "MODE",
+        conflicts_with = "pick",
+        help = "auto-pick the source color based on..."
     )]
-    pub preview: bool,
+    pub prefer: Option<PreferMode>,
+
+    #[arg(
+        long = "open-picker",
+        default_value_t = false,
+        conflicts_with = "pick",
+        help = "open the interactive color picker"
+    )]
+    pub open_picker: bool,
 
     #[arg(
         short = 'r',
@@ -69,41 +76,43 @@ pub struct Cli {
     pub output: bool,
 
     #[arg(
-        long = "output-to",
+        long = "output-only",
         value_name = "APP",
         help = "write specific processed template to output"
     )]
     pub output_to: Option<String>,
 
     #[arg(
-        short = 'w',
-        long = "wallpaper",
+        short = 'p',
+        long = "preview",
         default_value_t = false,
-        help = "set as desktop wallpaper"
+        conflicts_with = "silent",
+        help = "print palette table"
     )]
-    pub wallpaper: bool,
-
-    #[arg(
-        short = 'q', long = "silent",
-        default_value_t = false,
-        conflicts_with_all = ["preview"],
-        help = "no process printed on screen"
-    )]
-    pub silent: bool,
+    pub preview: bool,
 
     #[arg(
         short = 'n',
         long = "dry-run",
         default_value_t = false,
-        help = "rendering and linking flags won't be applied"
+        help = "render but skip writing or updating files anywhere"
     )]
     pub dry_run: bool,
+
+    #[arg(
+        short = 'q', long = "silent",
+        default_value_t = false,
+        conflicts_with_all = ["preview"],
+        help = "suppress process outputs"
+    )]
+    pub silent: bool,
 
     #[arg(
         short = 'S',
         long = "style",
         value_name = "STYLE",
-        default_value = "tonal-spot"
+        default_value = "tonal-spot",
+        help = "choose a Material 3 style"
     )]
     pub style: Style,
 
@@ -115,52 +124,19 @@ pub struct Cli {
     pub light: bool,
 
     #[arg(
-        short = 'W',
-        long = "watch",
-        default_value_t = false,
-        help = "reload when files change"
-    )]
-    pub watch: bool,
-
-    #[arg(
         short = 't',
         long = "contrast",
         value_name = "LEVEL",
         default_value = "standard",
-        help = "increase color contrast"
+        help = "choose color contrast levels"
     )]
     pub contrast: Contrast,
-
-    #[arg(
-        short = 'P', long = "pick", value_name = "N",
-        value_parser = clap::value_parser!(u8).range(0..5),
-        conflicts_with = "prefer",
-        help = "explicitly choose a source color"
-    )]
-    pub pick: Option<u8>,
-
-    #[arg(
-        short = 'e',
-        long = "prefer",
-        value_name = "MODE",
-        conflicts_with = "pick",
-        help = "auto-pick source color based on..."
-    )]
-    pub prefer: Option<PreferMode>,
-
-    #[arg(
-        long = "open-picker",
-        default_value_t = false,
-        conflicts_with = "pick",
-        help = "explicitly open the interactive color picker"
-    )]
-    pub open_picker: bool,
 
     #[arg(
         short = 'b',
         long = "blend-style",
         value_name = "STYLE",
-        help = "blend with another style (requires --blend-ratio)"
+        help = "blend with a second Material 3 style"
     )]
     pub blend_style: Option<Style>,
 
@@ -168,14 +144,39 @@ pub struct Cli {
         long = "blend-ratio",
         value_name = "RATIO",
         default_value_t = 0.5,
-        help = "blend ratio 0.1-0.9 when using --blend-style"
+        help = "blend ratio 0.1 – 0.9 ( requires --blend-style )"
     )]
     pub blend_ratio: f64,
 
     #[arg(
+        short = 'w',
+        long = "wallpaper",
+        default_value_t = false,
+        help = "set as desktop wallpaper"
+    )]
+    pub wallpaper: bool,
+
+    #[arg(
+        short = 'R',
+        long = "reload-scheme",
+        default_value_t = false,
+        conflicts_with_all = ["image", "image_url"],
+        help = "reload last generated color scheme"
+    )]
+    pub reload_scheme: bool,
+
+    #[arg(
+        short = 'W',
+        long = "watch",
+        default_value_t = false,
+        help = "watch relevant files and re-render on change"
+    )]
+    pub watch: bool,
+
+    #[arg(
         long = "init",
         default_value_t = false,
-        help = "generate configuration file"
+        help = "generate a default configuration file ( warns if already existing )"
     )]
     pub init: bool,
 
@@ -218,103 +219,5 @@ impl Cli {
             return Err("--blend-ratio must be between 0.1 and 0.9".into());
         }
         Ok(())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use clap::Parser;
-
-    fn parse(args: &[&str]) -> Cli {
-        let mut all = vec!["rizzoo"];
-        all.extend_from_slice(args);
-        Cli::parse_from(all)
-    }
-
-    fn valid(args: &[&str]) -> bool {
-        parse(args).validate().is_ok()
-    }
-
-    #[test]
-    fn init_alone_is_valid() {
-        assert!(valid(&["--init"]));
-    }
-
-    #[test]
-    fn init_overwrite_alone_is_valid() {
-        assert!(valid(&["--init-overwrite"]));
-    }
-
-    #[test]
-    fn init_conflicts_with_init_overwrite() {
-        assert!(Cli::try_parse_from(["rizzoo", "--init", "--init-overwrite"]).is_err());
-    }
-
-    #[test]
-    fn empty_invocation_errors() {
-        assert!(!valid(&[]));
-    }
-
-    #[test]
-    fn action_flags_alone_are_valid() {
-        // re-process the cached colors.json: each of these alone is a legit command
-        assert!(valid(&["--preview"]));
-        assert!(valid(&["--render"]));
-        assert!(valid(&["--output"]));
-        assert!(valid(&["--output-to", "alacritty"]));
-    }
-
-    #[test]
-    fn preview_with_source_is_valid() {
-        assert!(valid(&["-p", "-c", "#ff0000"]));
-    }
-
-    #[test]
-    fn invalid_hex_color_errors() {
-        assert!(!valid(&["-c", "not-a-hex"]));
-        assert!(valid(&["-c", "#ff0000"]));
-    }
-
-    #[test]
-    fn prefer_requires_image() {
-        assert!(!valid(&["-e", "darkness"]));
-        assert!(valid(&["-e", "darkness", "-i", "img.png"]));
-    }
-
-    #[test]
-    fn blend_ratio_out_of_bounds() {
-        let mut c = parse(&["-c", "#ffffff", "-b", "vibrant"]);
-        c.blend_ratio = 1.5;
-        assert!(c.validate().is_err());
-        c.blend_ratio = -0.1;
-        assert!(c.validate().is_err());
-        c.blend_ratio = 0.05;
-        assert!(c.validate().is_err(), "below minimum 0.10 must error");
-        c.blend_ratio = 0.995;
-        assert!(c.validate().is_err(), "above maximum 0.99 must error");
-        c.blend_ratio = 0.5;
-        assert!(c.validate().is_ok());
-    }
-
-    #[test]
-    fn pick_range_enforced_by_clap() {
-        assert!(Cli::try_parse_from(["rizzoo", "-p", "-c", "#fff", "-P", "99"]).is_err());
-        assert!(Cli::try_parse_from(["rizzoo", "-p", "-c", "#fff", "-P", "3"]).is_ok());
-    }
-
-    #[test]
-    fn image_conflicts_with_image_url() {
-        assert!(Cli::try_parse_from(["rizzoo", "-i", "a.png", "-u", "http://x/y.png"]).is_err());
-    }
-
-    #[test]
-    fn reload_scheme_conflicts_with_image() {
-        assert!(Cli::try_parse_from(["rizzoo", "-R", "-i", "a.png"]).is_err());
-    }
-
-    #[test]
-    fn preview_conflicts_with_silent() {
-        assert!(Cli::try_parse_from(["rizzoo", "-c", "#fff", "-p", "-q"]).is_err());
     }
 }

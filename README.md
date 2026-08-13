@@ -95,33 +95,31 @@ rizzoo --init
 <details><summary>View Full Reference</summary>
 
 ```
-Usage: rizzoo [OPTIONS]
-
 Options:
-  -i, --image <PATH>         image path as color source
-  -u, --image-url <URL>      url link of an image as the color source
-  -c, --color <HEX>          a color of your choice in hex format
-  -R, --reload-scheme        reload the last generated color scheme
-  -p, --preview              print palette table
+  -i, --image <PATH>         image file / path as color source
+  -u, --image-url <URL>      url of an image to use as the color source
+  -c, --color <HEX>          hex color to use as the color source
+  -P, --pick <N>             explicitly choose the most optimal source color 0-3
+  -e, --prefer <MODE>        auto-pick the source color based on...
+      --open-picker          open the interactive color picker
   -r, --render               fill template files with colors
   -o, --output               write all processed templates to output
-      --output-to <APP>      write specific processed template to output
-  -w, --wallpaper            set as desktop wallpaper
-  -q, --silent               no process printed on screen
-  -n, --dry-run              read and write flags won't be applied
-  -S, --style <STYLE>        [default: tonal-spot] [possible values: tonal-spot, neutral, vibrant, expressive, rainbow, fruit-salad, monochrome, fidelity, content]
+      --output-only <APP>    write specific processed template to output
+  -p, --preview              print palette table
+  -n, --dry-run              render but skip writing or updating files anywhere
+  -q, --silent               suppress process outputs
+  -S, --style <STYLE>        choose a Material 3 style
       --light                generate light variant colors
-  -W, --watch                reload when files change
-  -t, --contrast <LEVEL>     increase color contrast [default: standard] [possible values: standard, medium, high]
-  -P, --pick <N>             explicitly choose a source color
-  -e, --prefer <MODE>        auto-pick source color based on... [possible values: darkness, lightness, saturation]
-      --open-picker          open the interactive color picker
-  -b, --blend-style <STYLE>  blend with another style (requires --blend-ratio) [possible values: tonal-spot, neutral, vibrant, expressive, rainbow, fruit-salad, monochrome, fidelity, content]
-      --blend-ratio <RATIO>  blend ratio 0.1-0.9 when using --blend-style [default: 0.5]
-      --init                 generate configuration file
+  -t, --contrast <LEVEL>     choose color contrast levels
+  -b, --blend-style <STYLE>  blend with a second Material 3 style
+      --blend-ratio <RATIO>  blend ratio 0.1 – 0.9 ( requires --blend-style )
+  -w, --wallpaper            set as desktop wallpaper
+  -R, --reload-scheme        reload last generated color scheme
+  -W, --watch                watch relevant files and re-render on change
+      --init                 generate a default configuration file ( warns if already existing )
       --init-overwrite       overwrite configuration file with defaults
-  -h, --help                 Print help
-  -V, --version              Print version
+  -h, --help                 prints me ;)
+  -V, --version              print version
 ```
 
 </details>
