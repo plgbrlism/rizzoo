@@ -191,11 +191,12 @@ impl State {
                     cached.seed_colors.clone().unwrap_or_default()
                 };
                 cached.seed_colors = Some(seed_colors.clone());
+                let primary = cached.roles.primary;
                 return Ok(GeneratedScheme {
                     scheme: cached,
                     is_new: false,
                     seed_colors,
-                    custom_colors: HashMap::new(),
+                    custom_colors: Self::generate_custom_colors(config, &primary)?,
                     pick,
                 });
             }
