@@ -45,7 +45,10 @@ impl State {
             pick,
         } = Self::load_or_generate(&cli, &paths, &config)?;
 
-        let seed_color = seed_colors.first().copied().unwrap_or(scheme.roles.primary);
+        let seed_color = seed_colors
+            .first()
+            .copied()
+            .unwrap_or(scheme.roles.dark.primary);
 
         if is_new && !cli.dry_run {
             export::json::write(&paths, &scheme)?;
@@ -91,10 +94,10 @@ impl State {
             let scheme = export::json::read(paths)?;
             step(cli, "reload: loaded last scheme");
             Ok(GeneratedScheme {
-                scheme,
+                scheme: scheme.clone(),
                 is_new: false,
                 seed_colors: Vec::new(),
-                custom_colors: HashMap::new(),
+                custom_colors: Self::generate_custom_colors(config, &scheme.roles.dark.primary)?,
                 pick: 0,
             })
         } else {
@@ -106,10 +109,10 @@ impl State {
             }
             let scheme = export::json::read(paths)?;
             Ok(GeneratedScheme {
-                scheme,
+                scheme: scheme.clone(),
                 is_new: false,
                 seed_colors: Vec::new(),
-                custom_colors: HashMap::new(),
+                custom_colors: Self::generate_custom_colors(config, &scheme.roles.dark.primary)?,
                 pick: 0,
             })
         }
@@ -170,13 +173,9 @@ impl State {
         let image_path = image::decode::resolve(image_arg)?;
         step(cli, &format!("image: {}", image_path.display()));
 
-        if cli.light {
-            step(cli, "mode: light");
-        }
-
         let cache_key_str = format!("{}:{}", cli.style.as_str(), cli.contrast);
         let file_size = cache::file_size(&image_path);
-        let key = cache::cache_key(&image_path, &cache_key_str, cli.light, file_size);
+        let key = cache::cache_key(&image_path, &cache_key_str, file_size);
 
         let force_regenerate = cli.pick.is_some() || cli.open_picker;
 
@@ -185,13 +184,13 @@ impl State {
                 step(cli, "colors: loaded from cache");
                 cached.wallpaper = image_arg.to_string_lossy().to_string();
                 let pick = cached.pick.unwrap_or(0);
-                let seed_colors = if cli.preview && cached.seed_colors.is_none() {
+                let seed_colors = if cli.preview.is_some() && cached.seed_colors.is_none() {
                     color::extract::ColorExtractor::extract(&image_path).unwrap_or_default()
                 } else {
                     cached.seed_colors.clone().unwrap_or_default()
                 };
                 cached.seed_colors = Some(seed_colors.clone());
-                let primary = cached.roles.primary;
+                let primary = cached.roles.dark.primary;
                 return Ok(GeneratedScheme {
                     scheme: cached,
                     is_new: false,
@@ -223,7 +222,6 @@ impl State {
             step(cli, &format!("source: {}", swatch));
         }
 
-        let is_dark = !cli.light;
         let contrast = cli.contrast.multiplier();
 
         let mut scheme = if let Some(blend_style) = cli.blend_style {
@@ -232,14 +230,12 @@ impl State {
                 cli.style,
                 blend_style,
                 cli.blend_ratio,
-                is_dark,
                 contrast,
             )
         } else {
             color::scheme::SchemeGenerator::generate_with_options(
                 &raw_color,
                 cli.style,
-                is_dark,
                 contrast,
                 image_path.clone(),
             )
@@ -258,11 +254,6 @@ impl State {
             }
         }
 
-        // dead, transitioned into persistent caching of url images
-        //if crate::image::loader::is_downloaded_temp_file(image_arg) {
-        //    let _ = std::fs::remove_file(image_arg);
-        //}
-
         Ok(GeneratedScheme {
             scheme,
             is_new: true,
@@ -280,9 +271,6 @@ impl State {
     ) -> Result<GeneratedScheme, LRatio> {
         let raw_color =
             Rgb::from_hex(hex).ok_or_else(|| LRatio::Custom(format!("invalid color '{hex}'")))?;
-        if cli.light {
-            step(cli, "mode: light");
-        }
         step(cli, &format!("color: {}", raw_color.to_hex()));
         if let Some(blend) = cli.blend_style {
             let primary_pct = ((1.0 - cli.blend_ratio) * 100.0).round() as u32;
@@ -298,7 +286,6 @@ impl State {
             step(cli, &format!("style: {}", cli.style));
         }
 
-        let is_dark = !cli.light;
         let contrast = cli.contrast.multiplier();
 
         let mut scheme = if let Some(blend_style) = cli.blend_style {
@@ -307,11 +294,10 @@ impl State {
                 cli.style,
                 blend_style,
                 cli.blend_ratio,
-                is_dark,
                 contrast,
             )
         } else {
-            color::scheme::SchemeGenerator::generate(&raw_color, cli.style, is_dark, contrast)
+            color::scheme::SchemeGenerator::generate(&raw_color, cli.style, contrast)
         };
 
         let seed_colors = vec![raw_color];
@@ -383,8 +369,35 @@ impl State {
     }
 
     pub fn preview(&self) -> Result<(), LRatio> {
-        if self.cli.preview {
-            export::generate::preview(&self.scheme, Some(&self.seed_colors), self.pick);
+        if let Some(mode) = self.cli.preview {
+            match mode {
+                crate::config::PreviewMode::Dark => {
+                    export::generate::preview(
+                        &self.scheme.roles.dark,
+                        Some(&self.seed_colors),
+                        self.pick,
+                    );
+                }
+                crate::config::PreviewMode::Light => {
+                    export::generate::preview(
+                        &self.scheme.roles.light,
+                        Some(&self.seed_colors),
+                        self.pick,
+                    );
+                }
+                crate::config::PreviewMode::Both => {
+                    export::generate::preview(
+                        &self.scheme.roles.dark,
+                        Some(&self.seed_colors),
+                        self.pick,
+                    );
+                    export::generate::preview(
+                        &self.scheme.roles.light,
+                        Some(&self.seed_colors),
+                        self.pick,
+                    );
+                }
+            }
         }
         Ok(())
     }

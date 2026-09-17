@@ -91,6 +91,15 @@ impl std::fmt::Display for PreferMode {
     }
 }
 
+#[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq, Default, clap::ValueEnum)]
+#[serde(rename_all = "kebab-case")]
+pub enum PreviewMode {
+    #[default]
+    Dark,
+    Light,
+    Both,
+}
+
 #[derive(Deserialize, Debug, Clone)]
 pub struct CustomColor {
     pub color: String,
@@ -127,8 +136,6 @@ fn is_template_configuration() -> bool {
 pub struct Configuration {
     #[serde(default)]
     pub style: Option<Style>,
-    #[serde(default)]
-    pub light: Option<bool>,
     #[serde(default)]
     pub contrast: Option<Contrast>,
     #[serde(default)]
@@ -186,11 +193,6 @@ impl Configuration {
         if c.style == Style::TonalSpot {
             if let Some(style) = self.style {
                 c.style = style;
-            }
-        }
-        if !c.light {
-            if let Some(l) = self.light {
-                c.light = l;
             }
         }
         if c.contrast == Contrast::Standard {

@@ -97,7 +97,7 @@ fn load_state(paths: &Paths) -> Option<LoadedState> {
         .as_ref()
         .and_then(|v| v.first())
         .copied()
-        .unwrap_or(scheme.roles.primary);
+        .unwrap_or(scheme.roles.dark.primary);
 
     let config = config::Configuration::load(&paths.config_toml);
     let custom_map = config.harmonize_custom_colors(&seed_color);

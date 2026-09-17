@@ -1,10 +1,22 @@
 use std::collections::HashMap;
 
-use crate::color::types::{ColorScheme, Rgb};
+use crate::color::types::{ColorScheme, MaterialRoles, Rgb};
 use crate::error::LRatio;
 use crate::paths::Paths;
 use crate::template::interpreter::{TemplateContext, TemplateEvaluator};
 use crate::template::parser::TemplateParser;
+
+fn insert_roles(ctx: &mut TemplateContext, roles: &MaterialRoles, suffix: &str) {
+    if let Ok(roles_json) = serde_json::to_value(roles) {
+        if let Some(obj) = roles_json.as_object() {
+            for (key, value) in obj {
+                if let Some(hex) = value.as_str() {
+                    ctx.vars.insert(format!("{key}{suffix}"), hex.to_string());
+                }
+            }
+        }
+    }
+}
 
 pub struct TemplateRenderer;
 
@@ -54,15 +66,9 @@ impl TemplateRenderer {
         custom_colors: Option<&HashMap<String, Rgb>>,
     ) -> TemplateContext {
         let mut ctx = TemplateContext::new();
-        if let Ok(roles_json) = serde_json::to_value(&scheme.roles) {
-            if let Some(obj) = roles_json.as_object() {
-                for (key, value) in obj {
-                    if let Some(hex) = value.as_str() {
-                        ctx.vars.insert(key.clone(), hex.to_string());
-                    }
-                }
-            }
-        }
+        insert_roles(&mut ctx, &scheme.roles.dark, "");
+        insert_roles(&mut ctx, &scheme.roles.dark, "_dark");
+        insert_roles(&mut ctx, &scheme.roles.light, "_light");
 
         ctx.vars
             .insert("wallpaper".into(), scheme.wallpaper.clone());

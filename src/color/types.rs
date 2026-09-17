@@ -1,4 +1,3 @@
-use mcu_material_color::DynamicScheme;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Copy)]
@@ -249,15 +248,19 @@ pub struct MaterialRoles {
     pub scrim: Rgb,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DualRoles {
+    pub light: MaterialRoles,
+    pub dark: MaterialRoles,
+}
+
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ColorScheme {
     pub wallpaper: String,
-    pub roles: MaterialRoles,
+    pub roles: DualRoles,
     pub seed_colors: Option<Vec<Rgb>>,
     #[serde(default)]
     pub pick: Option<usize>,
-    #[serde(skip)]
-    pub scheme: Option<DynamicScheme>,
 }
 
 impl std::fmt::Debug for ColorScheme {

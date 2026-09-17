@@ -8,7 +8,7 @@ use tabled::{
 };
 use yansi::{Color, Paint};
 
-use crate::color::types::{ColorScheme, Rgb};
+use crate::color::types::{MaterialRoles, Rgb};
 use crate::config::TemplateConfiguration;
 use crate::error::LRatio;
 use crate::paths::Paths;
@@ -105,7 +105,7 @@ fn swatch(color: &Rgb) -> String {
         .to_string()
 }
 
-pub fn preview(scheme: &ColorScheme, seed_colors: Option<&Vec<Rgb>>, pick: usize) {
+pub fn preview(roles: &MaterialRoles, seed_colors: Option<&Vec<Rgb>>, pick: usize) {
     let mut builder = Builder::default();
 
     if let Some(seeds) = seed_colors {
@@ -139,7 +139,7 @@ pub fn preview(scheme: &ColorScheme, seed_colors: Option<&Vec<Rgb>>, pick: usize
         "".into(),
     ]);
 
-    if let Ok(roles_json) = serde_json::to_value(&scheme.roles) {
+    if let Ok(roles_json) = serde_json::to_value(roles) {
         if let Some(obj) = roles_json.as_object() {
             for (name, value) in obj {
                 if let Some(hex) = value.as_str() {

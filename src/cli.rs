@@ -2,7 +2,7 @@ use clap::Parser;
 use std::path::PathBuf;
 
 use crate::color::types::Rgb;
-use crate::config::{Contrast, PreferMode, Style};
+use crate::config::{Contrast, PreferMode, PreviewMode, Style};
 
 #[derive(Parser, Debug, Clone)]
 #[command(
@@ -85,11 +85,13 @@ pub struct Cli {
     #[arg(
         short = 'p',
         long = "preview",
-        default_value_t = false,
+        value_name = "MODE",
+        num_args = 0..=1,
+        default_missing_value = "dark",
         conflicts_with = "silent",
-        help = "print palette table"
+        help = "print palette table (dark|light|both)"
     )]
-    pub preview: bool,
+    pub preview: Option<PreviewMode>,
 
     #[arg(
         short = 'n',
@@ -115,13 +117,6 @@ pub struct Cli {
         help = "choose a Material 3 style"
     )]
     pub style: Style,
-
-    #[arg(
-        long = "light",
-        default_value_t = false,
-        help = "generate light variant colors"
-    )]
-    pub light: bool,
 
     #[arg(
         short = 't',
@@ -201,7 +196,7 @@ impl Cli {
             && !self.output
             && self.output_to.is_none()
             && !self.render
-            && !self.preview
+            && self.preview.is_none()
         {
             return Err(
                 "what to do?\n [-i image, -u url, -c color, -R reload-scheme, -m fill templates, -l output apps, -p preview]".into()

@@ -5,10 +5,9 @@ use crate::color::types::ColorScheme;
 use crate::error::LRatio;
 use crate::paths::Paths;
 
-pub fn cache_key(image_path: &Path, harmony: &str, is_light: bool, file_size: u64) -> String {
+pub fn cache_key(image_path: &Path, harmony: &str, file_size: u64) -> String {
     let mut hasher = Sha256::new();
     hasher.update(harmony.as_bytes());
-    hasher.update([if is_light { 1u8 } else { 0u8 }]);
     hasher.update(file_size.to_le_bytes());
     if let Ok(mut file) = std::fs::File::open(image_path) {
         use std::io::Read;
