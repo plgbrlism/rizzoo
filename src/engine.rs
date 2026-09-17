@@ -55,6 +55,11 @@ impl State {
             step(&cli, "updated: colors.json");
         }
 
+        step(
+            &cli,
+            &format!("variant: {:?}", cli.resolved_mode()).to_lowercase(),
+        );
+
         Ok(Self {
             cli,
             paths,
@@ -65,6 +70,22 @@ impl State {
             seed_color,
             pick,
         })
+    }
+
+    fn log_style(cli: &Cli) {
+        if let Some(blend) = cli.blend_style {
+            let primary_pct = ((1.0 - cli.blend_ratio) * 100.0).round() as u32;
+            let secondary_pct = (cli.blend_ratio * 100.0).round() as u32;
+            step(
+                cli,
+                &format!(
+                    "scheme: {}% {} + {}% {}",
+                    primary_pct, cli.style, secondary_pct, blend
+                ),
+            );
+        } else {
+            step(cli, &format!("scheme: {}", cli.style));
+        }
     }
 
     fn resolve_image(cli: &Cli) -> Result<Option<std::path::PathBuf>, LRatio> {
@@ -172,6 +193,7 @@ impl State {
     ) -> Result<GeneratedScheme, LRatio> {
         let image_path = image::decode::resolve(image_arg)?;
         step(cli, &format!("image: {}", image_path.display()));
+        Self::log_style(cli);
 
         let cache_key_str = format!("{}:{}", cli.style.as_str(), cli.contrast);
         let file_size = cache::file_size(&image_path);
@@ -201,19 +223,6 @@ impl State {
             }
         }
 
-        if let Some(blend) = cli.blend_style {
-            let primary_pct = ((1.0 - cli.blend_ratio) * 100.0).round() as u32;
-            let secondary_pct = (cli.blend_ratio * 100.0).round() as u32;
-            step(
-                cli,
-                &format!(
-                    "scheme: {}% {} + {}% {}",
-                    primary_pct, cli.style, secondary_pct, blend
-                ),
-            );
-        } else {
-            step(cli, &format!("scheme: {}", cli.style));
-        }
         let seed_colors = color::extract::ColorExtractor::extract(&image_path)?;
         let (raw_color, pick, swatch) = Self::resolve_seed_color(cli, &seed_colors)?;
         if let Some(pref) = &cli.prefer {
@@ -250,6 +259,7 @@ impl State {
 
         if !cli.dry_run {
             if let Err(e) = cache::save_scheme(paths, &key, &scheme) {
+                println!();
                 log::warn!("{e}");
             }
         }
@@ -272,19 +282,7 @@ impl State {
         let raw_color =
             Rgb::from_hex(hex).ok_or_else(|| LRatio::Custom(format!("invalid color '{hex}'")))?;
         step(cli, &format!("color: {}", raw_color.to_hex()));
-        if let Some(blend) = cli.blend_style {
-            let primary_pct = ((1.0 - cli.blend_ratio) * 100.0).round() as u32;
-            let secondary_pct = (cli.blend_ratio * 100.0).round() as u32;
-            step(
-                cli,
-                &format!(
-                    "style: {}% {} + {}% {}",
-                    primary_pct, cli.style, secondary_pct, blend
-                ),
-            );
-        } else {
-            step(cli, &format!("style: {}", cli.style));
-        }
+        Self::log_style(cli);
 
         let contrast = cli.contrast.multiplier();
 
@@ -345,8 +343,12 @@ impl State {
             return Ok(());
         }
         if self.cli.render {
-            match TemplateRenderer::render_all(&self.paths, &self.scheme, Some(&self.custom_colors))
-            {
+            match TemplateRenderer::render_all(
+                &self.paths,
+                &self.scheme,
+                Some(&self.custom_colors),
+                self.cli.resolved_mode(),
+            ) {
                 Ok(()) => step(&self.cli, "templates: rendered to ~/.cache/rizzoo/"),
                 Err(e) => return Err(e),
             }
@@ -407,7 +409,7 @@ impl State {
             return Ok(());
         }
         if self.cli.watch {
-            crate::watch::start(&self.paths)?;
+            crate::watch::start(&self.paths, self.cli.resolved_mode())?;
         }
         Ok(())
     }

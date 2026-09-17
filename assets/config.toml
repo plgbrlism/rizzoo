@@ -3,6 +3,7 @@
 # Uncomment and edit only what you want to override.
 
 # style = "tonal-spot"
+# mode = "dark"
 # contrast = "standard"
 # pick = 0
 # prefer = "darkness"

@@ -111,10 +111,13 @@ fn linux_set(path: &Path) -> Result<String, LRatio> {
     for setter in wallpaper_setters.iter().filter(|b| (b.is_available)()) {
         match (setter.set)(path) {
             Ok(()) => return Ok(setter.name.to_string()),
-            Err(e) => log::warn!(
-                "{}",
-                LRatio::WallpaperSet(format!("{} failed: {}", setter.name, e))
-            ),
+            Err(e) => {
+                println!();
+                log::warn!(
+                    "{}",
+                    LRatio::WallpaperSet(format!("{} failed: {}", setter.name, e))
+                )
+            }
         }
     }
 
@@ -132,6 +135,7 @@ fn run_hook(hook: &str, path: &Path) -> Result<(), LRatio> {
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         if !stderr.trim().is_empty() {
+            println!();
             log::warn!(
                 "{}",
                 LRatio::WallpaperHook(format!("hook stderr: {stderr}"))

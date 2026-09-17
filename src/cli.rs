@@ -2,7 +2,7 @@ use clap::Parser;
 use std::path::PathBuf;
 
 use crate::color::types::Rgb;
-use crate::config::{Contrast, PreferMode, PreviewMode, Style};
+use crate::config::{Contrast, PreferMode, PreviewMode, Style, ThemeMode};
 
 #[derive(Parser, Debug, Clone)]
 #[command(
@@ -85,7 +85,7 @@ pub struct Cli {
     #[arg(
         short = 'p',
         long = "preview",
-        value_name = "MODE",
+        value_name = "VARIANT",
         num_args = 0..=1,
         default_missing_value = "dark",
         conflicts_with = "silent",
@@ -100,6 +100,14 @@ pub struct Cli {
         help = "render but skip writing or updating files anywhere"
     )]
     pub dry_run: bool,
+
+    #[arg(
+        short = 'm',
+        long = "mode",
+        value_name = "VARIANT",
+        help = "theme variant for template rendering"
+    )]
+    pub mode: Option<ThemeMode>,
 
     #[arg(
         short = 'q', long = "silent",
@@ -185,6 +193,13 @@ pub struct Cli {
 }
 
 impl Cli {
+    /// The mode templates render with, after precedence: CLI flag overrides
+    /// config default (both applied in `Configuration::merge`), falling back
+    /// to Dark so behavior is unchanged for users who never set a mode.
+    pub fn resolved_mode(&self) -> ThemeMode {
+        self.mode.unwrap_or_default()
+    }
+
     pub fn validate(&self) -> Result<(), String> {
         if self.init || self.init_overwrite {
             return Ok(());

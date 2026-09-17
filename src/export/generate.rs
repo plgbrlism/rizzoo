@@ -19,6 +19,7 @@ pub fn render_all(
 ) -> Result<(), LRatio> {
     for (name, entry) in templates {
         if let Err(e) = render_and_write(name, entry, paths) {
+            println!();
             log::warn!("{e}");
         }
     }
@@ -90,6 +91,7 @@ fn render_and_write(
             })?;
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
+            println!();
             log::warn!(
                 "post_hook for template '{}' failed: {stderr}",
                 entry.template
@@ -111,7 +113,7 @@ pub fn preview(roles: &MaterialRoles, seed_colors: Option<&Vec<Rgb>>, pick: usiz
     if let Some(seeds) = seed_colors {
         if !seeds.is_empty() {
             builder.push_record(vec![
-                "Sources".bold().to_string(),
+                "Source/s".bold().to_string(),
                 "".into(),
                 "".into(),
                 "".into(),

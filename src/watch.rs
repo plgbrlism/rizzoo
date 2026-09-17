@@ -7,7 +7,7 @@ use std::time::Duration;
 use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
 
 use crate::color::types::{ColorScheme, Rgb};
-use crate::config::{self, TemplateConfiguration};
+use crate::config::{self, TemplateConfiguration, ThemeMode};
 use crate::error::LRatio;
 use crate::export;
 use crate::paths::Paths;
@@ -19,7 +19,7 @@ type LoadedState = (
     HashMap<String, TemplateConfiguration>,
 );
 
-pub fn start(paths: &Paths) -> Result<(), LRatio> {
+pub fn start(paths: &Paths, mode: ThemeMode) -> Result<(), LRatio> {
     let paths = paths.clone();
     let (tx, rx) = channel();
 
@@ -67,15 +67,18 @@ pub fn start(paths: &Paths) -> Result<(), LRatio> {
                 };
 
                 if let Err(e) =
-                    TemplateRenderer::render_all(&paths, &scheme, custom_colors.as_ref())
+                    TemplateRenderer::render_all(&paths, &scheme, custom_colors.as_ref(), mode)
                 {
+                    println!();
                     log::warn!("{e}");
                     continue;
                 }
 
                 if let Err(e) = export::generate::render_all(&paths, &templates) {
+                    println!();
                     log::warn!("{e}");
                 } else {
+                    println!();
                     log::info!("Reload complete.");
                 }
             }

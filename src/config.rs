@@ -100,6 +100,31 @@ pub enum PreviewMode {
     Both,
 }
 
+/// Sets the default mode for bare template vars.
+/// Both polarities are always generated; this selects the active one.
+#[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq, Default, clap::ValueEnum)]
+#[serde(rename_all = "kebab-case")]
+pub enum ThemeMode {
+    #[default]
+    Dark,
+    Light,
+}
+
+impl ThemeMode {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Dark => "dark",
+            Self::Light => "light",
+        }
+    }
+}
+
+impl std::fmt::Display for ThemeMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
 #[derive(Deserialize, Debug, Clone)]
 pub struct CustomColor {
     pub color: String,
@@ -143,6 +168,8 @@ pub struct Configuration {
     #[serde(default)]
     pub prefer: Option<PreferMode>,
     #[serde(default)]
+    pub mode: Option<ThemeMode>,
+    #[serde(default)]
     pub custom_colors: Option<HashMap<String, CustomColor>>,
     #[serde(default)]
     pub wallpaper: Option<WallpaperConfiguration>,
@@ -175,6 +202,7 @@ impl Configuration {
         let content = match std::fs::read_to_string(path) {
             Ok(c) => c,
             Err(e) => {
+                println!();
                 log::warn!("failed to read {}: {e}", path.display());
                 return Self::default();
             }
@@ -182,6 +210,7 @@ impl Configuration {
         match toml::from_str::<Configuration>(&content) {
             Ok(cfg) => cfg,
             Err(e) => {
+                println!();
                 log::warn!("failed to parse {}: {e}", path.display());
                 Self::default()
             }
@@ -211,6 +240,9 @@ impl Configuration {
                     c.prefer = Some(pr);
                 }
             }
+        }
+        if c.mode.is_none() && self.mode.is_some() {
+            c.mode = self.mode;
         }
         c
     }

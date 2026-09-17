@@ -51,6 +51,7 @@ impl Paths {
     pub fn check_config(&self, force: bool) -> Result<(), LRatio> {
         self.check_directory()?;
         if self.config_toml.exists() && !force {
+            println!();
             log::warn!("config already exists at {}", self.config_toml.display());
             log::warn!("use --init-overwrite to reset to defaults");
             return Ok(());

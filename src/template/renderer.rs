@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use crate::color::types::{ColorScheme, MaterialRoles, Rgb};
+use crate::config::ThemeMode;
 use crate::error::LRatio;
 use crate::paths::Paths;
 use crate::template::interpreter::{TemplateContext, TemplateEvaluator};
@@ -25,9 +26,10 @@ impl TemplateRenderer {
         paths: &Paths,
         scheme: &ColorScheme,
         custom_colors: Option<&HashMap<String, Rgb>>,
+        mode: ThemeMode,
     ) -> Result<(), LRatio> {
         let templates = Self::collect_templates(paths)?;
-        let context = Self::build_context(scheme, custom_colors);
+        let context = Self::build_context(scheme, custom_colors, mode);
 
         for (filename, source) in &templates {
             let nodes = TemplateParser::parse(source).map_err(|e| {
@@ -50,10 +52,12 @@ impl TemplateRenderer {
 
             let tmp_path = out_path.with_extension("tmp");
             if let Err(e) = std::fs::write(&tmp_path, &rendered) {
+                println!();
                 log::warn!("{}", LRatio::TemplateWrite(out_path, e.to_string()));
                 continue;
             }
             if let Err(e) = std::fs::rename(&tmp_path, &out_path) {
+                println!();
                 log::warn!("{}", LRatio::TemplateWrite(out_path, e.to_string()));
             }
         }
@@ -64,18 +68,23 @@ impl TemplateRenderer {
     fn build_context(
         scheme: &ColorScheme,
         custom_colors: Option<&HashMap<String, Rgb>>,
+        mode: ThemeMode,
     ) -> TemplateContext {
+        let bare_roles = match mode {
+            ThemeMode::Dark => &scheme.roles.dark,
+            ThemeMode::Light => &scheme.roles.light,
+        };
+
         let mut ctx = TemplateContext::new();
-        insert_roles(&mut ctx, &scheme.roles.dark, "");
+        insert_roles(&mut ctx, bare_roles, "");
         insert_roles(&mut ctx, &scheme.roles.dark, "_dark");
         insert_roles(&mut ctx, &scheme.roles.light, "_light");
 
         ctx.vars
             .insert("wallpaper".into(), scheme.wallpaper.clone());
 
-        // Both themes generate simultaneously.
-        // Default vars are dark; light vars use the `_light` suffix.
-        ctx.vars.insert("mode".into(), "dark".into());
+        // `mode` reflects the active theme; `_light` and `_dark` suffixes remain accessible.
+        ctx.vars.insert("mode".into(), mode.as_str().into());
 
         if let Some(custom) = custom_colors {
             for (name, color) in custom {
@@ -105,7 +114,10 @@ impl TemplateRenderer {
                     Ok(contents) => {
                         map.insert(filename, contents);
                     }
-                    Err(e) => log::warn!("{}", LRatio::TemplateRead(path, e.to_string())),
+                    Err(e) => {
+                        println!();
+                        log::warn!("{}", LRatio::TemplateRead(path, e.to_string()))
+                    }
                 }
             }
         }
