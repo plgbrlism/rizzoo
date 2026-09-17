@@ -73,6 +73,10 @@ impl TemplateRenderer {
         ctx.vars
             .insert("wallpaper".into(), scheme.wallpaper.clone());
 
+        // Both themes generate simultaneously.
+        // Default vars are dark; light vars use the `_light` suffix.
+        ctx.vars.insert("mode".into(), "dark".into());
+
         if let Some(custom) = custom_colors {
             for (name, color) in custom {
                 ctx.vars.insert(format!("custom_{}", name), color.to_hex());

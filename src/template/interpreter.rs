@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::template::filters::FilterRegistry;
-use crate::template::parser::{FilterArg, FilterCall, TemplateNode};
+use crate::template::parser::{Condition, FilterArg, FilterCall, TemplateNode};
 
 #[derive(Debug, Clone, Default)]
 pub struct TemplateContext {
@@ -35,6 +35,29 @@ impl TemplateEvaluator {
             TemplateNode::Text(text) => Ok(text.clone()),
             TemplateNode::Variable { name, filters } => {
                 Self::evaluate_variable(name, filters, context)
+            }
+            TemplateNode::Conditional {
+                condition,
+                if_true,
+                if_false,
+            } => {
+                let matched = Self::evaluate_condition(condition, context);
+                let branch = if matched { if_true } else { if_false };
+                Self::evaluate(branch, context)
+            }
+        }
+    }
+
+    fn evaluate_condition(condition: &Condition, context: &TemplateContext) -> bool {
+        match condition {
+            Condition::Var(name) => context
+                .vars
+                .get(name)
+                .map(|v| !v.is_empty())
+                .unwrap_or(false),
+            Condition::NotVar(name) => context.vars.get(name).map(|v| v.is_empty()).unwrap_or(true),
+            Condition::Eq(left, right) => {
+                context.vars.get(left).map(|v| v == right).unwrap_or(false)
             }
         }
     }

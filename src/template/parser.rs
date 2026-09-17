@@ -1,4 +1,4 @@
-use winnow::combinator::{alt, delimited, opt, preceded, repeat, separated};
+use winnow::combinator::{alt, cut_err, delimited, opt, preceded, repeat, separated};
 use winnow::prelude::*;
 use winnow::token::{literal, take_while};
 
@@ -9,6 +9,18 @@ pub enum TemplateNode {
         name: String,
         filters: Vec<FilterCall>,
     },
+    Conditional {
+        condition: Condition,
+        if_true: Vec<TemplateNode>,
+        if_false: Vec<TemplateNode>,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Condition {
+    Var(String),
+    NotVar(String),
+    Eq(String, String),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -73,6 +85,10 @@ fn filter_args(input: &mut &str) -> ModalResult<Vec<FilterArg>> {
     .parse_next(input)
 }
 
+fn ws0<'i>(input: &mut &'i str) -> ModalResult<&'i str> {
+    take_while(0.., |c: char| c.is_whitespace()).parse_next(input)
+}
+
 fn filter_call(input: &mut &str) -> ModalResult<FilterCall> {
     let _ = literal(":").parse_next(input)?;
     let name = identifier.parse_next(input)?;
@@ -88,6 +104,74 @@ fn variable_node(input: &mut &str) -> ModalResult<TemplateNode> {
     let _ = take_while(0.., |c: char| c.is_whitespace()).parse_next(input)?;
     let _ = literal("}}").parse_next(input)?;
     Ok(TemplateNode::Variable { name, filters })
+}
+
+// {{ var == "value" ? a : b }}
+// {{ var ? a : b }}
+// {{ !var > a : b }}
+fn condition(input: &mut &str) -> ModalResult<Condition> {
+    alt((
+        preceded(literal("!"), identifier.map(Condition::NotVar)),
+        comparison,
+        identifier.map(Condition::Var),
+    ))
+    .parse_next(input)
+}
+
+fn comparison(input: &mut &str) -> ModalResult<Condition> {
+    (identifier, ws0, literal("=="), ws0, identifier)
+        .map(|(left, _, _, _, right)| Condition::Eq(left, right))
+        .parse_next(input)
+}
+
+// A branch is a single expression: a variable (with optional filters) or a
+// quoted string literal.
+fn branch_expr(input: &mut &str) -> ModalResult<TemplateNode> {
+    alt((
+        string_arg.map(|s| match s {
+            FilterArg::String(s) => TemplateNode::Text(s),
+            _ => unreachable!("string_arg always yields String"),
+        }),
+        (identifier, repeat(0.., filter_call))
+            .map(|(name, filters)| TemplateNode::Variable { name, filters }),
+    ))
+    .parse_next(input)
+}
+
+fn branches(input: &mut &str) -> ModalResult<(Vec<TemplateNode>, Vec<TemplateNode>)> {
+    let _ = ws0(input)?;
+    let if_true = branch_expr(input)?;
+    // Require whitespace before the separator: `{{ x ? a : b }}`. Without it,
+    // `a:b` would be consumed as a filter on `a`, making the syntax ambiguous.
+    let _ = take_while(1.., |c: char| c.is_whitespace()).parse_next(input)?;
+    let _ = literal(":").parse_next(input)?;
+    let _ = ws0(input)?;
+    let if_false = branch_expr(input)?;
+    Ok((vec![if_true], vec![if_false]))
+}
+
+fn conditional_node(input: &mut &str) -> ModalResult<TemplateNode> {
+    let _ = literal("{{").parse_next(input)?;
+    let _ = take_while(0.., |c: char| c.is_whitespace()).parse_next(input)?;
+    let condition = condition(input)?;
+    let _ = take_while(0.., |c: char| c.is_whitespace()).parse_next(input)?;
+    // The `?` must be present to qualify as a conditional. If absent, backtrack
+    // so `variable_node` can handle `{{ x }}`.
+    match opt(preceded(ws0, literal("?"))).parse_next(input)? {
+        Some(_) => {
+            let (if_true, if_false) = cut_err(branches).parse_next(input)?;
+            let _ = ws0(input)?;
+            let _ = literal("}}").parse_next(input)?;
+            Ok(TemplateNode::Conditional {
+                condition,
+                if_true,
+                if_false,
+            })
+        }
+        None => Err(winnow::error::ErrMode::Backtrack(
+            winnow::error::ContextError::new(),
+        )),
+    }
 }
 
 // Hand-rolled character scanner for raw text between template tags.
@@ -119,7 +203,7 @@ fn text_node(input: &mut &str) -> ModalResult<TemplateNode> {
 }
 
 fn template_node(input: &mut &str) -> ModalResult<TemplateNode> {
-    alt((variable_node, text_node)).parse_next(input)
+    alt((conditional_node, variable_node, text_node)).parse_next(input)
 }
 
 pub struct TemplateParser;

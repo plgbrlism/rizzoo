@@ -89,7 +89,7 @@ pub struct Cli {
         num_args = 0..=1,
         default_missing_value = "dark",
         conflicts_with = "silent",
-        help = "print palette table (dark|light|both)"
+        help = "print palette table"
     )]
     pub preview: Option<PreviewMode>,
 
