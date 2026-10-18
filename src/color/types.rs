@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub struct Rgb {
@@ -261,6 +262,8 @@ pub struct ColorScheme {
     pub seed_colors: Option<Vec<Rgb>>,
     #[serde(default)]
     pub pick: Option<usize>,
+    #[serde(default)]
+    pub custom_colors: HashMap<String, String>,
 }
 
 impl std::fmt::Debug for ColorScheme {
@@ -269,6 +272,7 @@ impl std::fmt::Debug for ColorScheme {
             .field("wallpaper", &self.wallpaper)
             .field("roles", &self.roles)
             .field("seed_colors", &self.seed_colors)
+            .field("custom_colors", &self.custom_colors)
             .finish()
     }
 }

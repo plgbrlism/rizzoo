@@ -100,8 +100,8 @@ pub enum PreviewMode {
     Both,
 }
 
-/// Sets the default mode for bare template vars.
-/// Both polarities are always generated; this selects the active one.
+/// picks which polarity bare `{{ role }}` and `{{ mode }}` resolve to at
+/// render time; both are always generated. default dark.
 #[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq, Default, clap::ValueEnum)]
 #[serde(rename_all = "kebab-case")]
 pub enum ThemeMode {
@@ -193,6 +193,13 @@ impl Configuration {
             out.insert(name.clone(), custom);
         }
         out
+    }
+
+    pub fn resolved_custom_colors(&self, seed_color: &Rgb) -> HashMap<String, String> {
+        self.harmonize_custom_colors(seed_color)
+            .into_iter()
+            .map(|(k, v)| (k, v.to_hex()))
+            .collect()
     }
 
     pub fn load(path: &Path) -> Self {

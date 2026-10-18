@@ -1,5 +1,6 @@
 use mcu_material_color::hct::Hct;
 use mcu_material_color::{DynamicScheme, DynamicSchemeOptions, Variant};
+use std::collections::HashMap;
 use std::path::PathBuf;
 
 use crate::color::roles::RoleExtractor;
@@ -44,6 +45,7 @@ impl SchemeGenerator {
             roles: dual_roles(seed_hct, style, contrast),
             seed_colors: None,
             pick: None,
+            custom_colors: HashMap::new(),
         }
     }
 
@@ -68,12 +70,8 @@ impl SchemeGenerator {
         let seed_hct = Hct::from_int(seed.to_argb_u32());
 
         let blend = |is_dark: bool| {
-            let primary_roles = RoleExtractor::extract(&make_dynamic_scheme(
-                seed_hct,
-                primary_style,
-                is_dark,
-                contrast,
-            ));
+            let primary_roles =
+                RoleExtractor::extract(&make_dynamic_scheme(seed_hct, primary_style, is_dark, contrast));
             let secondary_roles = RoleExtractor::extract(&make_dynamic_scheme(
                 seed_hct,
                 secondary_style,
@@ -91,6 +89,7 @@ impl SchemeGenerator {
             },
             seed_colors: None,
             pick: None,
+            custom_colors: HashMap::new(),
         }
     }
 }

@@ -55,10 +55,16 @@ impl TemplateEvaluator {
                 .get(name)
                 .map(|v| !v.is_empty())
                 .unwrap_or(false),
-            Condition::NotVar(name) => context.vars.get(name).map(|v| v.is_empty()).unwrap_or(true),
-            Condition::Eq(left, right) => {
-                context.vars.get(left).map(|v| v == right).unwrap_or(false)
-            }
+            Condition::NotVar(name) => context
+                .vars
+                .get(name)
+                .map(|v| v.is_empty())
+                .unwrap_or(true),
+            Condition::Eq(left, right) => context
+                .vars
+                .get(left)
+                .map(|v| v == right)
+                .unwrap_or(false),
         }
     }
 

@@ -74,7 +74,6 @@ impl TemplateRenderer {
             ThemeMode::Dark => &scheme.roles.dark,
             ThemeMode::Light => &scheme.roles.light,
         };
-
         let mut ctx = TemplateContext::new();
         insert_roles(&mut ctx, bare_roles, "");
         insert_roles(&mut ctx, &scheme.roles.dark, "_dark");
@@ -83,7 +82,8 @@ impl TemplateRenderer {
         ctx.vars
             .insert("wallpaper".into(), scheme.wallpaper.clone());
 
-        // `mode` reflects the active theme; `_light` and `_dark` suffixes remain accessible.
+        // `mode` mirrors the resolved mode; `_light`/`_dark` suffixes stay
+        // available regardless of it.
         ctx.vars.insert("mode".into(), mode.as_str().into());
 
         if let Some(custom) = custom_colors {
@@ -114,6 +114,7 @@ impl TemplateRenderer {
                     Ok(contents) => {
                         map.insert(filename, contents);
                     }
+
                     Err(e) => {
                         println!();
                         log::warn!("{}", LRatio::TemplateRead(path, e.to_string()))

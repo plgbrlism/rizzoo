@@ -106,9 +106,9 @@ fn variable_node(input: &mut &str) -> ModalResult<TemplateNode> {
     Ok(TemplateNode::Variable { name, filters })
 }
 
-// {{ var == "value" ? a : b }}
-// {{ var ? a : b }}
-// {{ !var > a : b }}
+// `{{ var == "value" ? a : b }}`
+// `{{ var ? a : b }}`
+// `{{ !var ? a : b }}`
 fn condition(input: &mut &str) -> ModalResult<Condition> {
     alt((
         preceded(literal("!"), identifier.map(Condition::NotVar)),
@@ -174,9 +174,6 @@ fn conditional_node(input: &mut &str) -> ModalResult<TemplateNode> {
     }
 }
 
-// Hand-rolled character scanner for raw text between template tags.
-// Consumes characters until it finds `{{`, tracking byte positions manually
-// so the remaining input slice is correctly positioned after extraction.
 fn text_node(input: &mut &str) -> ModalResult<TemplateNode> {
     let original = *input;
     let mut consumed = 0usize;
@@ -197,9 +194,8 @@ fn text_node(input: &mut &str) -> ModalResult<TemplateNode> {
         ));
     }
 
-    let text: String = original.chars().take(consumed).collect();
     *input = &original[consumed..];
-    Ok(TemplateNode::Text(text))
+    Ok(TemplateNode::Text(original[..consumed].to_string()))
 }
 
 fn template_node(input: &mut &str) -> ModalResult<TemplateNode> {

@@ -57,7 +57,7 @@ impl State {
 
         step(
             &cli,
-            &format!("variant: {:?}", cli.resolved_mode()).to_lowercase(),
+            &format!("mode: {:?}", cli.resolved_mode()).to_lowercase(),
         );
 
         Ok(Self {
@@ -125,7 +125,7 @@ impl State {
             if !paths.output.exists() {
                 return Err(LRatio::CacheRead(
                     paths.output.clone(),
-                    "colors.json missing — run with --image or --image-url first".to_string(),
+                    "colors.json missing - run with --image or --image-url first".to_string(),
                 ));
             }
             let scheme = export::json::read(paths)?;
@@ -143,12 +143,12 @@ impl State {
         if seed_colors.is_empty() {
             return Err(LRatio::NoColors);
         }
-        let pick = if let Some(pref) = &cli.prefer {
-            color::extract::ColorExtractor::select_by_preference(seed_colors, *pref)
-        } else if let Some(p) = cli.pick {
+        let pick = if let Some(p) = cli.pick {
             p.min(seed_colors.len().saturating_sub(1) as u8) as usize
         } else if cli.open_picker || (std::io::stdout().is_terminal() && seed_colors.len() > 1) {
             Self::show_interactive_picker(seed_colors)?
+        } else if let Some(pref) = &cli.prefer {
+            color::extract::ColorExtractor::select_by_preference(seed_colors, *pref)
         } else {
             0
         };
@@ -212,12 +212,26 @@ impl State {
                     cached.seed_colors.clone().unwrap_or_default()
                 };
                 cached.seed_colors = Some(seed_colors.clone());
-                let primary = cached.roles.dark.primary;
+                let seed_color = seed_colors
+                    .get(pick)
+                    .copied()
+                    .unwrap_or(cached.roles.dark.primary);
+                let fresh_custom = config.resolved_custom_colors(&seed_color);
+                if cached.custom_colors != fresh_custom {
+                    cached.custom_colors = fresh_custom.clone();
+                    if !cli.dry_run
+                        && let Err(e) = cache::save_scheme(paths, &key, &cached)
+                    {
+                        println!();
+                        log::warn!("{e}");
+                    }
+                    step(cli, "colors: custom colors updated");
+                }
                 return Ok(GeneratedScheme {
                     scheme: cached,
                     is_new: false,
                     seed_colors,
-                    custom_colors: Self::generate_custom_colors(config, &primary)?,
+                    custom_colors: Self::generate_custom_colors(config, &seed_color)?,
                     pick,
                 });
             }
@@ -256,6 +270,7 @@ impl State {
         step(cli, "colors: generated");
 
         let custom_colors = Self::generate_custom_colors(config, &raw_color)?;
+        scheme.custom_colors = config.resolved_custom_colors(&raw_color);
 
         if !cli.dry_run {
             if let Err(e) = cache::save_scheme(paths, &key, &scheme) {
@@ -303,6 +318,7 @@ impl State {
         step(cli, "colors: generated");
 
         let custom_colors = Self::generate_custom_colors(config, &raw_color)?;
+        scheme.custom_colors = config.resolved_custom_colors(&raw_color);
         Ok(GeneratedScheme {
             scheme,
             is_new: true,

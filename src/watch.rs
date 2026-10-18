@@ -78,7 +78,6 @@ pub fn start(paths: &Paths, mode: ThemeMode) -> Result<(), LRatio> {
                     println!();
                     log::warn!("{e}");
                 } else {
-                    println!();
                     log::info!("Reload complete.");
                 }
             }
