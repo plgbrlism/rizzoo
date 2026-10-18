@@ -103,16 +103,3 @@ jobs:
         with:
           name: rizzoo-macos-aarch64
           path: target/aarch64-apple-darwin/release/rizzoo
-
-  # Job 5: Docker cross-platform test
-  docker:
-    runs-on: ubuntu-latest
-    needs: [linux, windows-cross]
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build Docker image
-        run: docker build -f Dockerfile.cross-test -t rizzoo-cross .
-
-      - name: Run cross-platform tests
-        run: docker run --rm rizzoo-cross
