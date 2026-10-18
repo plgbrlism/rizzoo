@@ -220,6 +220,30 @@ Check [`example/`](example/) for a sandboxed testing script.
 </h2>
 
 <h4>
+	<sub>
+		 <img src="https://cdn.simpleicons.org/github/white"
+		 height="20"
+		 width="20">
+	</sub>
+	&nbsp;Source (default)
+</h4>
+
+<details><summary>Click to expand</summary>
+
+```sh
+git clone https://github.com/plgbrlism/rizzoo && cd rizzoo
+
+# build release + install to /usr/local/bin (prefix arg optional)
+sudo ./install.sh
+
+# or just build the binary
+cargo build --release
+```
+
+</p>
+</details>
+
+<h4>
      <sub>
           <img  src="https://cdn.simpleicons.org/rust/white"
            height="20"
@@ -233,29 +257,6 @@ Check [`example/`](example/) for a sandboxed testing script.
 
 ```sh
 cargo install rizzoo
-```
-
-</p>
-</details>
-
-<h4>
-	<sub>
-		 <img src="https://cdn.simpleicons.org/github/white"
-		 height="20"
-		 width="20">
-	</sub>
-	&nbsp;Source
-</h4>
-
-<details><summary>Click to expand</summary>
-
-```sh
-git clone https://github.com/plgbrlism/rizzoo && cd rizzoo
-
-cargo build --release
-
-# or build and install to /usr/local/bin (prefix arg optional)
-sudo ./scripts/install.sh
 ```
 
 </p>
