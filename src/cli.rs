@@ -212,9 +212,10 @@ impl Cli {
             && self.output_to.is_none()
             && !self.render
             && self.preview.is_none()
+            && !self.open_picker
         {
             return Err(
-                "what to do?\n [-i image, -u url, -c color, -R reload-scheme, -m fill templates, -l output apps, -p preview]".into()
+                "what to do?\n [-i image, -u url, -c color, -R reload-scheme, -m fill templates, -l output apps, -p preview, --open-picker]".into()
             );
         }
         if self.prefer.is_some() && !has_image {
