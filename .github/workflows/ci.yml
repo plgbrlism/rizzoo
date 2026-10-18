@@ -1,0 +1,99 @@
+name: Cross-Platform CI
+
+on:
+  push:
+    branches: [master, dev]
+  pull_request:
+    branches: [master, dev]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # Job 1: Linux - build
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build release binary
+        run: cargo build --release
+
+      - name: Smoke test
+        run: |
+          ./target/release/rizzoo --version
+          ./target/release/rizzoo --help
+
+      - name: Upload Linux binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: rizzoo-linux-x86_64
+          path: target/release/rizzoo
+
+  # Job 2: Windows - cross-compile
+  windows-cross:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-gnu
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install mingw-w64
+        run: sudo apt-get install -y mingw-w64
+
+      - name: Build Windows binary
+        run: cargo build --release --target x86_64-pc-windows-gnu
+
+      - name: Verify PE binary
+        run: file target/x86_64-pc-windows-gnu/release/rizzoo.exe | grep PE32
+
+      - name: Upload Windows binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: rizzoo-windows-x86_64
+          path: target/x86_64-pc-windows-gnu/release/rizzoo.exe
+
+  # Job 3: macOS - native build
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build release binary
+        run: cargo build --release
+
+      - name: Smoke test
+        run: |
+          ./target/release/rizzoo --version
+          ./target/release/rizzoo --help
+
+      - name: Upload macOS binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: rizzoo-macos-x86_64
+          path: target/release/rizzoo
+
+  # Job 4: macOS ARM (Apple Silicon)
+  macos-arm:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build ARM binary
+        run: cargo build --release --target aarch64-apple-darwin
+
+      - name: Upload macOS ARM binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: rizzoo-macos-aarch64
+          path: target/aarch64-apple-darwin/release/rizzoo
