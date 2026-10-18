@@ -253,6 +253,9 @@ cargo install rizzoo
 git clone https://github.com/plgbrlism/rizzoo && cd rizzoo
 
 cargo build --release
+
+# or build and install to /usr/local/bin (prefix arg optional)
+sudo ./scripts/install.sh
 ```
 
 </p>
