@@ -2,10 +2,10 @@
 # Run with: ./example/run.sh
 # All paths below are relative to the repo root (run.sh cd's there).
 
-style = "expressive"
-light = false
+style = "vibrant"
 contrast = "medium"
 prefer = "darkness"
+mode = "dark"
 
 [wallpaper]
 set = false
@@ -18,3 +18,7 @@ highlight = { color = "#61afef", blend = false }
 [test-all]
 template = "test-all-filters.tpl"
 output   = "example/output/all-filters.txt"
+
+[test-mode]
+template = "test-conditionals.tpl"
+output   = "example/output/conditionals.txt"

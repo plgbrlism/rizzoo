@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Reproducible example run for rizzoo.
 #
-# Uses XDG_* env vars to keep the whole run inside ./example — your real
+# Uses XDG_* env vars to keep the whole run inside ./example - your real
 # ~/.config/rizzoo and ~/.cache/rizzoo are never touched.
 #
 # What it does:
@@ -25,3 +25,19 @@ cargo run -- \
 echo
 echo "=== example/output/all-filters.txt ==="
 cat example/output/all-filters.txt
+
+echo
+echo "=== example/output/conditionals.txt (config mode=dark) ==="
+cat example/output/conditionals.txt
+
+echo
+echo "=== Running with --mode light (overrides config mode=dark) ==="
+cargo run -- \
+  -i example/dank-shrek.jpg \
+  -P 0 \
+  -r -o -p \
+  --mode light
+
+echo
+echo "=== example/output/conditionals.txt (--mode light) ==="
+cat example/output/conditionals.txt

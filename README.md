@@ -109,7 +109,7 @@ Options:
   -n, --dry-run              render but skip writing or updating files anywhere
   -q, --silent               suppress process outputs
   -S, --style <STYLE>        choose a Material 3 style
-      --light                generate light variant colors
+  -m, --mode <VARIANT>       theme variant for template rendering
   -t, --contrast <LEVEL>     choose color contrast levels
   -b, --blend-style <STYLE>  blend with a second Material 3 style
       --blend-ratio <RATIO>  blend ratio 0.1 – 0.9 ( requires --blend-style )
@@ -137,7 +137,7 @@ Options:
 
 ```toml
 style = "tonal-spot"
-light = false
+mode = "dark"
 contrast = "standard"
 
 [wallpaper]
@@ -169,6 +169,8 @@ Templates live in `~/.config/rizzoo/templates/`. `-r` renders them to cache, `-o
 ### Variables
 
 Every Material role is a hex string: `{{ primary }}`, `{{ on_primary }}`, `{{ surface }}`, `{{ background }}`, `{{ outline }}`, `{{ error }}`… plus `{{ shadow }}`, `{{ scrim }}`, `{{ custom_<name> }}`, and `{{ wallpaper }}`.
+
+> bare material token defaults to dark variant, although both {{ <material-token>_dark }} and {{ <material-token>_light }} are always available.
 
 ### Filters
 
@@ -265,9 +267,9 @@ cargo build --release
      Acknowledgements
 </h2>
 
-- [matugen](https://github.com/InioX/matugen) — material theming inspiration
-- [pywal](https://github.com/dylanaraps/pywal) — popularized wallpaper-based color theming
-- [mcu-material-color](https://crates.io/crates/mcu-material-color) — rust port of google material color utilities
+- [matugen](https://github.com/InioX/matugen) - material theming inspiration
+- [pywal](https://github.com/dylanaraps/pywal) - popularized wallpaper-based color theming
+- [mcu-material-color](https://crates.io/crates/mcu-material-color) - rust port of google material color utilities
 - [wallust](https://codeberg.org/explosion-mental/wallust.git)
 - [hellwal](https://github.com/danihek/hellwal) 
 - [cwal](https://github.com/nitinbhat972/cwal)
