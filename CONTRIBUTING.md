@@ -1,24 +1,35 @@
-<h1 align="center"> 
-	Contributing to Rizzoo
-</h1>
+# Contributing to rizzoo
 
-Hey! Thanks for checking out **rizzoo**. 
+Thanks for checking out **rizzoo**. It's a hobby project that fell out of the Linux theming rabbit hole, cross-platform by intent. Bug fixes, application templates, and Rust learning are all welcome.
 
-This is a hobby project born out of falling down the Linux theming rabbit hole. While the goal is to make it cross-platform (inspired by mature color scheme engines), it hasn't been tested or compiled across different operating systems yet.
+## Prerequisites
 
-Whether you're fixing a bug, writing application templates, or just learning Rust; your help will deeply be appreciated!
+- [Rust](https://www.rust-lang.org/tools/install) (`cargo`, `rustc` 1.86+)
+- `git`
 
----
+## Build & test
 
-## Getting Started
+```sh
+git clone https://github.com/plgbrlism/rizzoo.git
+cd rizzoo
 
-### Prerequisites
-* [Rust Env](https://www.rust-lang.org/tools/install)  (`cargo`, `rustc`)
-* `git`
+cargo test             # run the suite
+cargo build --release  # binary at target/release/rizzoo
+```
 
-### Building & Testing
+Run your build directly:
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/plgbrlism/rizzoo.git
-   cd rizzoo
+```sh
+./target/release/rizzoo -i path/to/image.jpg -r -o -p
+```
+
+## Contributing
+
+- Work on the `dev` branch and open pull requests against it.
+- Keep changes focused; match the existing style.
+- Run `cargo test` before pushing.
+- Template contributions live in the [Templates Collection](https://github.com/plgbrlism/rizzoo/wiki/Collections) - a template plus its config entry is enough.
+
+## Reporting issues
+
+Open an issue with your platform, the command you ran, and the output. Known issues are listed in [Troubleshooting](https://github.com/plgbrlism/rizzoo/wiki/Troubleshooting).
