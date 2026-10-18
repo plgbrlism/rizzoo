@@ -38,7 +38,7 @@ pub struct Cli {
         short = 'P', long = "pick", value_name = "N",
         value_parser = clap::value_parser!(u8).range(0..5),
         conflicts_with = "prefer",
-        help = "explicitly choose the most optimal source color 0-3"
+        help = "explicitly choose the most optimal source color 0-4"
     )]
     pub pick: Option<u8>,
 
@@ -47,7 +47,7 @@ pub struct Cli {
         long = "prefer",
         value_name = "MODE",
         conflicts_with = "pick",
-        help = "auto-pick the source color based on..."
+        help = "auto-pick the source color by darkness, lightness, or saturation"
     )]
     pub prefer: Option<PreferMode>,
 
@@ -88,7 +88,6 @@ pub struct Cli {
         value_name = "VARIANT",
         num_args = 0..=1,
         default_missing_value = "dark",
-        conflicts_with = "silent",
         help = "print palette table"
     )]
     pub preview: Option<PreviewMode>,
@@ -112,10 +111,23 @@ pub struct Cli {
     #[arg(
         short = 'q', long = "silent",
         default_value_t = false,
-        conflicts_with_all = ["preview"],
         help = "suppress process outputs"
     )]
     pub silent: bool,
+
+    #[arg(
+        short = 'v', long = "verbose",
+        default_value_t = false,
+        help = "show progress output"
+    )]
+    pub verbose: bool,
+
+    #[arg(
+        short = 'd', long = "debug",
+        default_value_t = false,
+        help = "show debug output"
+    )]
+    pub debug: bool,
 
     #[arg(
         short = 'S',
@@ -147,7 +159,7 @@ pub struct Cli {
         long = "blend-ratio",
         value_name = "RATIO",
         default_value_t = 0.5,
-        help = "blend ratio 0.1 – 0.9 ( requires --blend-style )"
+        help = "blend ratio 0.1 – 0.9 (requires --blend-style)"
     )]
     pub blend_ratio: f64,
 
@@ -215,7 +227,7 @@ impl Cli {
             && !self.open_picker
         {
             return Err(
-                "what to do?\n [-i image, -u url, -c color, -R reload-scheme, -m fill templates, -l output apps, -p preview, --open-picker]".into()
+                "what to do?\n [-i image, -u url, -c color, -R reload-scheme, -r render, -o output, --output-only APP, -p preview, --open-picker]".into()
             );
         }
         if self.prefer.is_some() && !has_image {
@@ -230,5 +242,110 @@ impl Cli {
             return Err("--blend-ratio must be between 0.1 and 0.9".into());
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::Parser;
+
+    fn parse(args: &[&str]) -> Cli {
+        let mut all = vec!["rizzoo"];
+        all.extend_from_slice(args);
+        Cli::parse_from(all)
+    }
+
+    fn valid(args: &[&str]) -> bool {
+        parse(args).validate().is_ok()
+    }
+
+    #[test]
+    fn init_alone_is_valid() {
+        assert!(valid(&["--init"]));
+    }
+
+    #[test]
+    fn init_overwrite_alone_is_valid() {
+        assert!(valid(&["--init-overwrite"]));
+    }
+
+    #[test]
+    fn init_conflicts_with_init_overwrite() {
+        assert!(Cli::try_parse_from(["rizzoo", "--init", "--init-overwrite"]).is_err());
+    }
+
+    #[test]
+    fn empty_invocation_errors() {
+        assert!(!valid(&[]));
+    }
+
+    #[test]
+    fn action_flags_alone_are_valid() {
+        // re-process the cached colors.json: each of these alone is a legit command
+        assert!(valid(&["--preview"]));
+        assert!(valid(&["--render"]));
+        assert!(valid(&["--output"]));
+        assert!(valid(&["--output-only", "alacritty"]));
+        assert!(valid(&["--open-picker"]));
+    }
+
+    #[test]
+    fn preview_with_source_is_valid() {
+        assert!(valid(&["-p", "-c", "#ff0000"]));
+    }
+
+    #[test]
+    fn invalid_hex_color_errors() {
+        assert!(!valid(&["-c", "not-a-hex"]));
+        assert!(valid(&["-c", "#ff0000"]));
+    }
+
+    #[test]
+    fn prefer_requires_image() {
+        assert!(!valid(&["-e", "darkness"]));
+        assert!(valid(&["-e", "darkness", "-i", "img.png"]));
+    }
+
+    #[test]
+    fn blend_ratio_out_of_bounds() {
+        let mut c = parse(&["-c", "#ffffff", "-b", "vibrant"]);
+        c.blend_ratio = 1.5;
+        assert!(c.validate().is_err());
+        c.blend_ratio = -0.1;
+        assert!(c.validate().is_err());
+        c.blend_ratio = 0.05;
+        assert!(c.validate().is_err(), "below minimum 0.10 must error");
+        c.blend_ratio = 0.995;
+        assert!(c.validate().is_err(), "above maximum 0.99 must error");
+        c.blend_ratio = 0.5;
+        assert!(c.validate().is_ok());
+    }
+
+    #[test]
+    fn pick_range_enforced_by_clap() {
+        assert!(Cli::try_parse_from(["rizzoo", "-p", "-c", "#fff", "-P", "99"]).is_err());
+        assert!(Cli::try_parse_from(["rizzoo", "-p", "-c", "#fff", "-P", "3"]).is_ok());
+    }
+
+    #[test]
+    fn image_conflicts_with_image_url() {
+        assert!(Cli::try_parse_from(["rizzoo", "-i", "a.png", "-u", "http://x/y.png"]).is_err());
+    }
+
+    #[test]
+    fn reload_scheme_conflicts_with_image() {
+        assert!(Cli::try_parse_from(["rizzoo", "-R", "-i", "a.png"]).is_err());
+    }
+
+    #[test]
+    fn preview_allows_silent() {
+        assert!(valid(&["-c", "#ff0000", "-p", "-q"]));
+    }
+
+    #[test]
+    fn verbose_and_debug_parse() {
+        assert!(parse(&["-c", "#ff0000", "-v"]).verbose);
+        assert!(parse(&["-c", "#ff0000", "-d"]).debug);
     }
 }

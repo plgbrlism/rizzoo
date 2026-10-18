@@ -19,7 +19,6 @@ pub fn render_all(
 ) -> Result<(), LRatio> {
     for (name, entry) in templates {
         if let Err(e) = render_and_write(name, entry, paths) {
-            println!();
             log::warn!("{e}");
         }
     }
@@ -78,6 +77,7 @@ fn render_and_write(
             e.to_string(),
         )
     })?;
+    log::info!("output: {name} → {}", output_path.display());
     if let Some(hook) = &entry.post_hook {
         let output = std::process::Command::new("sh")
             .arg("-c")
@@ -91,7 +91,6 @@ fn render_and_write(
             })?;
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            println!();
             log::warn!(
                 "post_hook for template '{}' failed: {stderr}",
                 entry.template
@@ -107,63 +106,67 @@ fn swatch(color: &Rgb) -> String {
         .to_string()
 }
 
-pub fn preview(roles: &MaterialRoles, seed_colors: Option<&Vec<Rgb>>, pick: usize) {
+fn color_table(records: Vec<[String; 4]>) -> String {
     let mut builder = Builder::default();
-
-    if let Some(seeds) = seed_colors {
-        if !seeds.is_empty() {
-            builder.push_record(vec![
-                "Source/s".bold().to_string(),
-                "".into(),
-                "".into(),
-                "".into(),
-                "".into(),
-            ]);
-            for (i, c) in seeds.iter().enumerate() {
-                let marker = if i == pick {
-                    "<< seed-color"
-                        .rgb(c.r, c.g, c.b)
-                        .bold()
-                        .italic()
-                        .to_string()
-                } else {
-                    "".to_string()
-                };
-                builder.push_record(vec![swatch(c), format!("[{}]", i), c.to_hex(), marker]);
-            }
-        }
+    for row in records {
+        builder.push_record(row);
     }
-
-    builder.push_record(vec![
-        "\n\nMaterial Palette".bold().to_string(),
-        "".into(),
-        "".into(),
-        "".into(),
-    ]);
-
-    if let Ok(roles_json) = serde_json::to_value(roles) {
-        if let Some(obj) = roles_json.as_object() {
-            for (name, value) in obj {
-                if let Some(hex) = value.as_str() {
-                    if let Some(color) = Rgb::from_hex(hex) {
-                        builder.push_record(vec![
-                            swatch(&color),
-                            name.to_string(),
-                            hex.to_string(),
-                            "".into(),
-                        ]);
-                    }
-                }
-            }
-        }
-    }
-
     let mut table = builder.build();
     table
         .with(Style::blank())
         .with(Modify::new(Segment::all()).with(Padding::new(3, 3, 0, 0)));
+    table.to_string()
+}
 
-    println!("\n{}\n", table);
+pub fn preview(
+    variants: &[(&str, &MaterialRoles)],
+    seed_colors: Option<&[Rgb]>,
+    pick: usize,
+) {
+    if let Some(seeds) = seed_colors
+        && !seeds.is_empty()
+    {
+        println!("\n{}", "Source/s".bold());
+        let records = seeds
+            .iter()
+            .enumerate()
+            .map(|(i, c)| {
+                let marker = if i == pick {
+                    "<< seed-color".bold().italic().to_string()
+                } else {
+                    String::new()
+                };
+                [swatch(c), format!("[{}]", i), c.to_hex(), marker]
+            })
+            .collect();
+        println!("{}", color_table(records));
+    }
+
+    for (label, roles) in variants {
+        let title = if variants.len() > 1 {
+            format!("{} {}", "Material Palette".bold(), format!("({label})").dim())
+        } else {
+            format!("\n{}", "Material Palette".bold())
+        };
+        println!("\n{}", title);
+
+        let records = match serde_json::to_value(roles) {
+            Ok(value) => value
+                .as_object()
+                .map(|obj| {
+                    obj.iter()
+                        .filter_map(|(name, value)| {
+                            let hex = value.as_str()?;
+                            let color = Rgb::from_hex(hex)?;
+                            Some([swatch(&color), name.to_string(), hex.to_string(), String::new()])
+                        })
+                        .collect()
+                })
+                .unwrap_or_default(),
+            Err(_) => Vec::new(),
+        };
+        println!("{}", color_table(records));
+    }
 }
 
 fn resolve_path(path: &str) -> PathBuf {

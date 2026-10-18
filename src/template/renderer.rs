@@ -52,12 +52,10 @@ impl TemplateRenderer {
 
             let tmp_path = out_path.with_extension("tmp");
             if let Err(e) = std::fs::write(&tmp_path, &rendered) {
-                println!();
                 log::warn!("{}", LRatio::TemplateWrite(out_path, e.to_string()));
                 continue;
             }
             if let Err(e) = std::fs::rename(&tmp_path, &out_path) {
-                println!();
                 log::warn!("{}", LRatio::TemplateWrite(out_path, e.to_string()));
             }
         }
@@ -116,7 +114,6 @@ impl TemplateRenderer {
                     }
 
                     Err(e) => {
-                        println!();
                         log::warn!("{}", LRatio::TemplateRead(path, e.to_string()))
                     }
                 }

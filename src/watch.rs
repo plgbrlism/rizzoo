@@ -69,13 +69,11 @@ pub fn start(paths: &Paths, mode: ThemeMode) -> Result<(), LRatio> {
                 if let Err(e) =
                     TemplateRenderer::render_all(&paths, &scheme, custom_colors.as_ref(), mode)
                 {
-                    println!();
                     log::warn!("{e}");
                     continue;
                 }
 
                 if let Err(e) = export::generate::render_all(&paths, &templates) {
-                    println!();
                     log::warn!("{e}");
                 } else {
                     log::info!("Reload complete.");

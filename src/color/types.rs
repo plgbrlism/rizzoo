@@ -276,3 +276,44 @@ impl std::fmt::Debug for ColorScheme {
             .finish()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn full_roles_json() -> String {
+        // every MaterialRoles field, serialized via the real generator
+        let scheme = crate::color::scheme::SchemeGenerator::generate(
+            &Rgb::rgb(75, 32, 130),
+            crate::config::Style::TonalSpot,
+            0.0,
+        );
+        let mut json = serde_json::to_string(&scheme).unwrap();
+        // drop the custom_colors key to simulate an old cache file
+        json = json.replace(",\"custom_colors\":{}", "");
+        json
+    }
+
+    #[test]
+    fn colorscheme_roundtrip_with_custom_colors() {
+        let mut json = full_roles_json();
+        json = json.replace(
+            ",\"seed_colors\":null",
+            ",\"seed_colors\":null,\"custom_colors\":{\"accent\":\"#e06c75\"}",
+        );
+        let cs: ColorScheme = serde_json::from_str(&json).unwrap();
+        assert_eq!(cs.custom_colors["accent"], "#e06c75");
+        // re-serialize keeps custom_colors
+        let again = serde_json::to_string(&cs).unwrap();
+        assert!(again.contains("\"custom_colors\""));
+    }
+
+    #[test]
+    fn colorscheme_old_cache_without_custom_colors_loads() {
+        let json = full_roles_json();
+        assert!(!json.contains("custom_colors"));
+        let cs: ColorScheme = serde_json::from_str(&json).unwrap();
+        assert!(cs.custom_colors.is_empty());
+        assert_ne!(cs.roles.dark.primary.to_hex(), "");
+    }
+}

@@ -216,3 +216,184 @@ impl TemplateParser {
         )
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parse(input: &str) -> Vec<TemplateNode> {
+        TemplateParser::parse(input).expect(input)
+    }
+
+    #[test]
+    fn plain_text() {
+        assert_eq!(parse("hello world"), vec![TemplateNode::Text("hello world".into())]);
+    }
+
+    #[test]
+    fn empty_input() {
+        assert_eq!(parse(""), vec![TemplateNode::Text(String::new())]);
+    }
+
+    #[test]
+    fn simple_variable() {
+        assert_eq!(
+            parse("{{ primary }}"),
+            vec![TemplateNode::Variable { name: "primary".into(), filters: vec![] }]
+        );
+    }
+
+    #[test]
+    fn variable_without_spaces() {
+        assert_eq!(
+            parse("{{primary}}"),
+            vec![TemplateNode::Variable { name: "primary".into(), filters: vec![] }]
+        );
+    }
+
+    #[test]
+    fn filter_no_space_before_colon() {
+        assert_eq!(
+            parse("{{ primary:hex_raw }}"),
+            vec![TemplateNode::Variable {
+                name: "primary".into(),
+                filters: vec![FilterCall { name: "hex_raw".into(), args: vec![] }],
+            }]
+        );
+    }
+
+    #[test]
+    fn filter_chain() {
+        let nodes = parse("{{ primary:hex_raw }}");
+        match &nodes[0] {
+            TemplateNode::Variable { filters, .. } => {
+                assert_eq!(filters.len(), 1);
+                assert_eq!(filters[0].name, "hex_raw");
+            }
+            other => panic!("expected variable, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn filter_number_arg() {
+        let nodes = parse("{{ primary:lighten(0.1) }}");
+        match &nodes[0] {
+            TemplateNode::Variable { filters, .. } => {
+                assert_eq!(filters[0].args, vec![FilterArg::Number(0.1)]);
+            }
+            other => panic!("expected variable, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn filter_string_arg() {
+        let nodes = parse(r##"{{ primary:harmonize("#abc123") }}"##);
+        match &nodes[0] {
+            TemplateNode::Variable { filters, .. } => {
+                assert_eq!(filters[0].args, vec![FilterArg::String("#abc123".into())]);
+            }
+            other => panic!("expected variable, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn filter_bare_var_and_number_args() {
+        // real-world shape: {{ on_surface:ensure_contrast(%surface, 4.5) }}
+        let nodes = parse("{{ on_surface:ensure_contrast(%surface, 4.5) }}");
+        match &nodes[0] {
+            TemplateNode::Variable { filters, .. } => {
+                assert_eq!(
+                    filters[0].args,
+                    vec![FilterArg::Variable("surface".into()), FilterArg::Number(4.5)]
+                );
+            }
+            other => panic!("expected variable, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn whitespace_tolerance_in_variable() {
+        assert_eq!(
+            parse("{{  primary  }}"),
+            vec![TemplateNode::Variable { name: "primary".into(), filters: vec![] }]
+        );
+    }
+
+    #[test]
+    fn unclosed_variable_errors() {
+        assert!(TemplateParser::parse("{{ primary").is_err());
+    }
+
+    #[test]
+    fn text_then_variable() {
+        let nodes = parse("bg = {{ primary }}");
+        assert_eq!(nodes.len(), 2);
+        assert_eq!(nodes[0], TemplateNode::Text("bg = ".into()));
+        assert!(matches!(nodes[1], TemplateNode::Variable { ref name, .. } if name == "primary"));
+    }
+
+    #[test]
+    fn conditional_variable_branches() {
+        let nodes = parse("{{ mode == dark ? primary : primary_light }}");
+        match &nodes[0] {
+            TemplateNode::Conditional { condition, if_true, if_false } => {
+                assert_eq!(*condition, Condition::Eq("mode".into(), "dark".into()));
+                assert_eq!(if_true.len(), 1);
+                assert_eq!(if_false.len(), 1);
+                assert!(matches!(&if_true[0], TemplateNode::Variable { name, .. } if name == "primary"));
+                assert!(matches!(&if_false[0], TemplateNode::Variable { name, .. } if name == "primary_light"));
+            }
+            other => panic!("expected conditional, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn conditional_with_spaces() {
+        let nodes = parse("{{ mode == dark ? primary : primary_light }}");
+        assert!(matches!(&nodes[0], TemplateNode::Conditional { .. }));
+    }
+
+    #[test]
+    fn conditional_without_spaces_errors() {
+        // `:primary_light` is greedily parsed as a filter on `primary`, so the
+        // separator is unreachable — the branch separator needs whitespace.
+        assert!(TemplateParser::parse("{{mode==dark?primary:primary_light}}").is_err());
+    }
+
+    #[test]
+    fn conditional_no_space_around_question_mark() {
+        let nodes = parse("{{mode==dark? primary : primary_light}}");
+        assert!(matches!(&nodes[0], TemplateNode::Conditional { .. }));
+    }
+
+    #[test]
+    fn conditional_string_branches() {
+        let nodes = parse(r##"{{ flag ? "yes" : "no" }}"##);
+        match &nodes[0] {
+            TemplateNode::Conditional { if_true, if_false, .. } => {
+                assert_eq!(if_true, &vec![TemplateNode::Text("yes".into())]);
+                assert_eq!(if_false, &vec![TemplateNode::Text("no".into())]);
+            }
+            other => panic!("expected conditional, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn plain_variable_still_parses() {
+        let nodes = parse("{{ primary }}");
+        assert!(matches!(nodes[0], TemplateNode::Variable { .. }));
+    }
+
+    #[test]
+    fn missing_question_mark_errors() {
+        assert!(TemplateParser::parse("{{ primary == dark }}").is_err());
+    }
+
+    #[test]
+    fn text_with_multibyte_chars_stops_at_variable() {
+        // em-dash (3 bytes) before `{{` must not shift the text/variable split
+        let nodes = parse("bg — {{ primary }}");
+        assert_eq!(nodes[0], TemplateNode::Text("bg — ".into()));
+        assert!(matches!(nodes[1], TemplateNode::Variable { ref name, .. } if name == "primary"));
+    }
+}

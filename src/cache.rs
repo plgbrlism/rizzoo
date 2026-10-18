@@ -30,7 +30,6 @@ pub fn load_scheme(paths: &Paths, key: &str) -> Result<Option<ColorScheme>, LRat
     match read_cache(&path) {
         Ok(dict) => Ok(Some(dict)),
         Err(_e) => {
-            println!();
             log::warn!("{}", LRatio::CacheCorrupted(path.clone()));
             let _ = std::fs::remove_file(&path);
             Ok(None)

@@ -125,7 +125,7 @@ impl State {
             if !paths.output.exists() {
                 return Err(LRatio::CacheRead(
                     paths.output.clone(),
-                    "colors.json missing - run with --image or --image-url first".to_string(),
+                    "colors.json missing — run with --image or --image-url first".to_string(),
                 ));
             }
             let scheme = export::json::read(paths)?;
@@ -222,7 +222,6 @@ impl State {
                     if !cli.dry_run
                         && let Err(e) = cache::save_scheme(paths, &key, &cached)
                     {
-                        println!();
                         log::warn!("{e}");
                     }
                     step(cli, "colors: custom colors updated");
@@ -274,10 +273,14 @@ impl State {
 
         if !cli.dry_run {
             if let Err(e) = cache::save_scheme(paths, &key, &scheme) {
-                println!();
                 log::warn!("{e}");
             }
         }
+
+        // dead, transitioned into persistent caching of url images
+        //if crate::image::loader::is_downloaded_temp_file(image_arg) {
+        //    let _ = std::fs::remove_file(image_arg);
+        //}
 
         Ok(GeneratedScheme {
             scheme,
@@ -388,34 +391,19 @@ impl State {
 
     pub fn preview(&self) -> Result<(), LRatio> {
         if let Some(mode) = self.cli.preview {
-            match mode {
+            let variants = match mode {
                 crate::config::PreviewMode::Dark => {
-                    export::generate::preview(
-                        &self.scheme.roles.dark,
-                        Some(&self.seed_colors),
-                        self.pick,
-                    );
+                    vec![("dark", &self.scheme.roles.dark)]
                 }
                 crate::config::PreviewMode::Light => {
-                    export::generate::preview(
-                        &self.scheme.roles.light,
-                        Some(&self.seed_colors),
-                        self.pick,
-                    );
+                    vec![("light", &self.scheme.roles.light)]
                 }
-                crate::config::PreviewMode::Both => {
-                    export::generate::preview(
-                        &self.scheme.roles.dark,
-                        Some(&self.seed_colors),
-                        self.pick,
-                    );
-                    export::generate::preview(
-                        &self.scheme.roles.light,
-                        Some(&self.seed_colors),
-                        self.pick,
-                    );
-                }
-            }
+                crate::config::PreviewMode::Both => vec![
+                    ("dark", &self.scheme.roles.dark),
+                    ("light", &self.scheme.roles.light),
+                ],
+            };
+            export::generate::preview(&variants, Some(&self.seed_colors), self.pick);
         }
         Ok(())
     }
@@ -431,8 +419,6 @@ impl State {
     }
 }
 
-fn step(cli: &Cli, msg: &str) {
-    if !cli.silent {
-        log::info!("{}", msg);
-    }
+fn step(_cli: &Cli, msg: &str) {
+    log::info!("{}", msg);
 }

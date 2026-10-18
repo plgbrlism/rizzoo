@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Reproducible example run for rizzoo.
 #
-# Uses XDG_* env vars to keep the whole run inside ./example - your real
+# Uses XDG_* env vars to keep the whole run inside ./example — your real
 # ~/.config/rizzoo and ~/.cache/rizzoo are never touched.
 #
 # What it does:

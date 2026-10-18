@@ -99,8 +99,8 @@ Options:
   -i, --image <PATH>         image file / path as color source
   -u, --image-url <URL>      url of an image to use as the color source
   -c, --color <HEX>          hex color to use as the color source
-  -P, --pick <N>             explicitly choose the most optimal source color 0-3
-  -e, --prefer <MODE>        auto-pick the source color based on...
+  -P, --pick <N>             explicitly choose the most optimal source color 0-4
+  -e, --prefer <MODE>        auto-pick the source color by darkness, lightness, or saturation
       --open-picker          open the interactive color picker
   -r, --render               fill template files with colors
   -o, --output               write all processed templates to output
@@ -108,11 +108,13 @@ Options:
   -p, --preview              print palette table
   -n, --dry-run              render but skip writing or updating files anywhere
   -q, --silent               suppress process outputs
+  -v, --verbose              show progress output
+  -d, --debug                show debug output
   -S, --style <STYLE>        choose a Material 3 style
   -m, --mode <VARIANT>       theme variant for template rendering
   -t, --contrast <LEVEL>     choose color contrast levels
   -b, --blend-style <STYLE>  blend with a second Material 3 style
-      --blend-ratio <RATIO>  blend ratio 0.1 – 0.9 ( requires --blend-style )
+      --blend-ratio <RATIO>  blend ratio 0.1 – 0.9 (requires --blend-style)
   -w, --wallpaper            set as desktop wallpaper
   -R, --reload-scheme        reload last generated color scheme
   -W, --watch                watch relevant files and re-render on change
@@ -271,9 +273,9 @@ cargo install rizzoo
      Acknowledgements
 </h2>
 
-- [matugen](https://github.com/InioX/matugen) - material theming inspiration
-- [pywal](https://github.com/dylanaraps/pywal) - popularized wallpaper-based color theming
-- [mcu-material-color](https://crates.io/crates/mcu-material-color) - rust port of google material color utilities
+- [matugen](https://github.com/InioX/matugen) — material theming inspiration
+- [pywal](https://github.com/dylanaraps/pywal) — popularized wallpaper-based color theming
+- [mcu-material-color](https://crates.io/crates/mcu-material-color) — rust port of google material color utilities
 - [wallust](https://codeberg.org/explosion-mental/wallust.git)
 - [hellwal](https://github.com/danihek/hellwal) 
 - [cwal](https://github.com/nitinbhat972/cwal)

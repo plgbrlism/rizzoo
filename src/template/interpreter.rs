@@ -106,3 +106,138 @@ impl TemplateEvaluator {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn eval(template: &str, ctx: &TemplateContext) -> Result<String, String> {
+        let nodes = crate::template::parser::TemplateParser::parse(template)?;
+        TemplateEvaluator::evaluate(&nodes, ctx)
+    }
+
+    fn sample_context() -> TemplateContext {
+        TemplateContext::new()
+            .with_var("primary", "#ff0000")
+            .with_var("secondary", "#00ff00")
+            .with_var("accent", "#0000ff")
+    }
+
+    #[test]
+    fn plain_text_passthrough() {
+        let ctx = TemplateContext::new();
+        assert_eq!(eval("hello", &ctx).unwrap(), "hello");
+    }
+
+    #[test]
+    fn variable_substitution() {
+        let ctx = sample_context();
+        assert_eq!(eval("{{ primary }}", &ctx).unwrap(), "#ff0000");
+    }
+
+    #[test]
+    fn variable_with_text() {
+        let ctx = sample_context();
+        assert_eq!(eval("bg = {{ primary }}!", &ctx).unwrap(), "bg = #ff0000!");
+    }
+
+    #[test]
+    fn undefined_variable_errors() {
+        let ctx = sample_context();
+        let err = eval("{{ nope }}", &ctx).unwrap_err();
+        assert!(err.contains("undefined variable: nope"));
+    }
+
+    #[test]
+    fn filter_chain_renders() {
+        let ctx = sample_context();
+        assert_eq!(eval("{{ primary:hex_raw }}", &ctx).unwrap(), "ff0000");
+    }
+
+    #[test]
+    fn bare_arg_resolves_from_context() {
+        let ctx = sample_context();
+        // blend primary toward secondary at 50% (CAM16-UCS, not sRGB lerp)
+        let out = eval("{{ primary:blend(%secondary, 0.5) }}", &ctx).unwrap();
+        assert!(crate::color::types::Rgb::from_hex(&out).is_some());
+        assert_ne!(out, "#ff0000");
+        assert_ne!(out, "#00ff00");
+    }
+
+    #[test]
+    fn unknown_filter_errors() {
+        let ctx = sample_context();
+        let err = eval("{{ primary:nope }}", &ctx).unwrap_err();
+        assert!(err.contains("unknown filter: nope"));
+    }
+
+    #[test]
+    fn multiple_variables_in_one_template() {
+        let ctx = sample_context();
+        let out = eval("{{ primary }} / {{ secondary }}", &ctx).unwrap();
+        assert_eq!(out, "#ff0000 / #00ff00");
+    }
+
+    #[test]
+    fn eq_condition_selects_true_branch() {
+        let ctx = sample_context().with_var("mode", "dark");
+        let out = eval("{{ mode == dark ? primary : secondary }}", &ctx).unwrap();
+        assert_eq!(out, "#ff0000");
+    }
+
+    #[test]
+    fn eq_condition_selects_false_branch() {
+        let ctx = sample_context().with_var("mode", "light");
+        let out = eval("{{ mode == dark ? primary : secondary }}", &ctx).unwrap();
+        assert_eq!(out, "#00ff00");
+    }
+
+    #[test]
+    fn eq_condition_missing_var_takes_false_branch() {
+        let ctx = sample_context();
+        let out = eval("{{ mode == dark ? primary : secondary }}", &ctx).unwrap();
+        assert_eq!(out, "#00ff00");
+    }
+
+    #[test]
+    fn var_condition_truthiness() {
+        let ctx = sample_context().with_var("custom_accent", "#123456");
+        let out = eval("{{ custom_accent ? custom_accent : primary }}", &ctx).unwrap();
+        assert_eq!(out, "#123456");
+    }
+
+    #[test]
+    fn var_condition_empty_takes_false_branch() {
+        let ctx = sample_context().with_var("custom_accent", "");
+        let out = eval("{{ custom_accent ? custom_accent : primary }}", &ctx).unwrap();
+        assert_eq!(out, "#ff0000");
+    }
+
+    #[test]
+    fn not_var_condition() {
+        let ctx = sample_context();
+        let out = eval("{{ !custom_accent ? primary : secondary }}", &ctx).unwrap();
+        assert_eq!(out, "#ff0000");
+    }
+
+    #[test]
+    fn not_var_condition_set_takes_false_branch() {
+        let ctx = sample_context().with_var("custom_accent", "#123456");
+        let out = eval("{{ !custom_accent ? primary : secondary }}", &ctx).unwrap();
+        assert_eq!(out, "#00ff00");
+    }
+
+    #[test]
+    fn string_literal_branches() {
+        let ctx = sample_context().with_var("mode", "dark");
+        let out = eval(r##"{{ mode == dark ? "on" : "off" }}"##, &ctx).unwrap();
+        assert_eq!(out, "on");
+    }
+
+    #[test]
+    fn branch_filters_still_apply() {
+        let ctx = sample_context().with_var("mode", "dark");
+        let out = eval("{{ mode == dark ? primary:hex_raw : secondary }}", &ctx).unwrap();
+        assert_eq!(out, "ff0000");
+    }
+}

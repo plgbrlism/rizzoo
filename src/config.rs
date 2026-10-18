@@ -100,8 +100,11 @@ pub enum PreviewMode {
     Both,
 }
 
-/// picks which polarity bare `{{ role }}` and `{{ mode }}` resolve to at
-/// render time; both are always generated. default dark.
+/// Which polarity bare `{{ role }}` vars and `{{ mode }}` resolve to at
+/// render time. Both polarities are always generated; this only selects
+/// which one is "current" for templates. Auto detection is deliberately not
+/// implemented; it would slot in here as a third variant resolved to
+/// Light/Dark before reaching the renderer.
 #[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq, Default, clap::ValueEnum)]
 #[serde(rename_all = "kebab-case")]
 pub enum ThemeMode {
@@ -209,7 +212,6 @@ impl Configuration {
         let content = match std::fs::read_to_string(path) {
             Ok(c) => c,
             Err(e) => {
-                println!();
                 log::warn!("failed to read {}: {e}", path.display());
                 return Self::default();
             }
@@ -217,7 +219,6 @@ impl Configuration {
         match toml::from_str::<Configuration>(&content) {
             Ok(cfg) => cfg,
             Err(e) => {
-                println!();
                 log::warn!("failed to parse {}: {e}", path.display());
                 Self::default()
             }
@@ -252,5 +253,224 @@ impl Configuration {
             c.mode = self.mode;
         }
         c
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parse_toml(s: &str) -> Configuration {
+        toml::from_str(s).expect(s)
+    }
+
+    fn tonalspot_cli() -> crate::cli::Cli {
+        use clap::Parser;
+        crate::cli::Cli::parse_from(["rizzoo", "-p"])
+    }
+
+    #[test]
+    fn empty_config_all_defaults() {
+        let cfg = parse_toml("");
+        assert!(cfg.style.is_none());
+        assert!(cfg.contrast.is_none());
+        assert!(cfg.pick.is_none());
+        assert!(cfg.custom_colors.is_none());
+        assert!(cfg.templates.is_empty());
+    }
+
+    #[test]
+    fn full_config_preview() {
+        let cfg = parse_toml(
+            r##"
+            style = "expressive"
+            contrast = "high"
+            pick = 3
+            [wallpaper]
+            set = true
+            command = "swaybg -i {{ image }} -m fill"
+            [custom_colors]
+            accent = { color = "#e06c75", blend = true }
+            highlight = { color = "#61afef" }
+            "##,
+        );
+        assert_eq!(cfg.style, Some(Style::Expressive));
+        assert_eq!(cfg.contrast, Some(Contrast::High));
+        assert_eq!(cfg.pick, Some(3));
+        assert_eq!(cfg.wallpaper.as_ref().unwrap().set, Some(true));
+        let cc = cfg.custom_colors.as_ref().unwrap();
+        assert!(cc["accent"].blend);
+        assert!(cc["highlight"].blend); // default-blend is true
+    }
+
+    #[test]
+    fn template_sections_flatten_into_templates() {
+        let cfg = parse_toml(
+            r#"
+            [alacritty]
+            template = "alacritty.tmpl"
+            output = "~/.config/alacritty/colors.toml"
+            [kitty]
+            template = "kitty.tmpl"
+            output = "~/.config/kitty/colors.conf"
+            post_hook = "kill -SIGUSR1 $(pidof kitty)"
+            "#,
+        );
+        assert_eq!(cfg.templates.len(), 2);
+        let alac = &cfg.templates["alacritty"];
+        assert_eq!(alac.template, "alacritty.tmpl");
+        assert_eq!(alac.output, "~/.config/alacritty/colors.toml");
+        assert_eq!(alac.post_hook, None);
+        assert!(alac.enabled); // default-enabled
+        let kitty = &cfg.templates["kitty"];
+        assert_eq!(
+            kitty.post_hook.as_deref(),
+            Some("kill -SIGUSR1 $(pidof kitty)")
+        );
+    }
+
+    #[test]
+    fn template_requires_template_and_output() {
+        // Missing `template` field → parse fails (this is the unhelpful-error case)
+        // we intentionally lock in so a regression surfaces loudly.
+        assert!(toml::from_str::<Configuration>("[foo]\noutput = \"x\"").is_err());
+        assert!(toml::from_str::<Configuration>("[foo]\ntemplate = \"x\"").is_err());
+    }
+
+    #[test]
+    fn invalid_toml_gracefully_defaults_on_load() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("config.toml");
+        std::fs::write(&path, "this is [[[ not valid toml").unwrap();
+        let cfg = Configuration::load(&path);
+        assert!(cfg.templates.is_empty());
+        assert!(cfg.style.is_none());
+    }
+
+    #[test]
+    fn missing_file_defaults_on_load() {
+        let dir = tempfile::tempdir().unwrap();
+        let cfg = Configuration::load(&dir.path().join("nope.toml"));
+        assert!(cfg.templates.is_empty());
+    }
+
+    #[test]
+    fn style_variants_deserialize() {
+        for (s, expect) in [
+            ("tonal-spot", Style::TonalSpot),
+            ("neutral", Style::Neutral),
+            ("vibrant", Style::Vibrant),
+            ("expressive", Style::Expressive),
+            ("rainbow", Style::Rainbow),
+            ("fruit-salad", Style::FruitSalad),
+            ("monochrome", Style::Monochrome),
+            ("fidelity", Style::Fidelity),
+            ("content", Style::Content),
+        ] {
+            let cfg = parse_toml(&format!("style = {s:?}"));
+            assert_eq!(cfg.style.unwrap(), expect, "{s}");
+        }
+    }
+
+    #[test]
+    fn contrast_multiplier() {
+        assert_eq!(Contrast::Standard.multiplier(), 0.0);
+        assert_eq!(Contrast::Medium.multiplier(), 0.5);
+        assert_eq!(Contrast::High.multiplier(), 1.0);
+    }
+
+    #[test]
+    fn merge_applies_config_when_cli_is_default() {
+        let cfg = parse_toml("style = \"vibrant\"\ncontrast = \"high\"\npick = 2");
+        let merged = cfg.merge(&tonalspot_cli());
+        assert_eq!(merged.style, Style::Vibrant);
+        assert_eq!(merged.contrast, Contrast::High);
+        assert_eq!(merged.pick, Some(2));
+    }
+
+    #[test]
+    fn merge_keeps_explicit_cli_over_config() {
+        let cfg = parse_toml("style = \"vibrant\"\ncontrast = \"high\"\npick = 2");
+        use crate::cli::Cli;
+        use clap::Parser;
+        let cli = Cli::parse_from(["rizzoo", "-p", "--style", "neutral", "--contrast", "medium"]);
+        let merged = cfg.merge(&cli);
+        assert_eq!(merged.style, Style::Neutral);
+        assert_eq!(merged.contrast, Contrast::Medium);
+        assert_eq!(merged.pick, Some(2)); // pick from config still applies
+    }
+
+    #[test]
+    fn mode_variants_deserialize() {
+        let cfg = parse_toml("mode = \"light\"");
+        assert_eq!(cfg.mode, Some(ThemeMode::Light));
+        let cfg = parse_toml("mode = \"dark\"");
+        assert_eq!(cfg.mode, Some(ThemeMode::Dark));
+    }
+
+    #[test]
+    fn merge_applies_config_mode_when_cli_absent() {
+        let cfg = parse_toml("mode = \"light\"");
+        let merged = cfg.merge(&tonalspot_cli());
+        assert_eq!(merged.mode, Some(ThemeMode::Light));
+        assert_eq!(merged.resolved_mode(), ThemeMode::Light);
+    }
+
+    #[test]
+    fn merge_keeps_explicit_cli_mode_over_config() {
+        let cfg = parse_toml("mode = \"light\"");
+        use crate::cli::Cli;
+        use clap::Parser;
+        let cli = Cli::parse_from(["rizzoo", "-p", "--mode", "dark"]);
+        let merged = cfg.merge(&cli);
+        assert_eq!(merged.mode, Some(ThemeMode::Dark));
+    }
+
+    #[test]
+    fn resolved_mode_defaults_to_dark() {
+        assert_eq!(tonalspot_cli().resolved_mode(), ThemeMode::Dark);
+    }
+
+    #[test]
+    fn harmonize_custom_colors_blend_flag() {
+        let cfg = parse_toml(
+            r##"
+            [custom_colors]
+            accent    = { color = "#e06c75", blend = true }
+            highlight = { color = "#61afef", blend = false }
+            "##,
+        );
+        let seed = Rgb::rgb(10, 20, 30);
+        let out = cfg.harmonize_custom_colors(&seed);
+        // highlight has blend=false → unchanged
+        assert_eq!(out["highlight"], Rgb::from_hex("#61afef").unwrap());
+        // accent has blend=true → shifted toward seed
+        assert_ne!(out["accent"], Rgb::from_hex("#e06c75").unwrap());
+    }
+
+    #[test]
+    fn harmonize_no_custom_colors() {
+        let cfg = Configuration::default();
+        assert!(cfg.harmonize_custom_colors(&Rgb::rgb(1, 2, 3)).is_empty());
+    }
+
+    #[test]
+    fn resolved_custom_colors_hex_strings() {
+        let cfg = parse_toml(
+            r##"
+            [custom_colors]
+            accent    = { color = "#e06c75", blend = false }
+            "##,
+        );
+        let seed = Rgb::rgb(10, 20, 30);
+        let out = cfg.resolved_custom_colors(&seed);
+        assert_eq!(out["accent"], "#e06c75");
+        assert_eq!(cfg.resolved_custom_colors(&seed).len(), 1);
+    }
+
+    #[test]
+    fn resolved_custom_colors_empty_when_unset() {
+        let cfg = Configuration::default();
+        assert!(cfg.resolved_custom_colors(&Rgb::rgb(1, 2, 3)).is_empty());
     }
 }

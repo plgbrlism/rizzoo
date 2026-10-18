@@ -1,6 +1,6 @@
 [package]
 name = "rizzoo"
-version = "0.7.1"
+version = "0.7.2"
 edition = "2024"
 authors = ["plgbrlism"]
 description = "a cross platform color generation tool implementing Material 3 Expressive"
@@ -12,6 +12,8 @@ exclude = [
     "assets/showcase.gif",
     "assets/showcase.tape",
     "assets/showcase.webp",
+    "assets/ukiir.svg",
+    "assets/rizzoo.svg",
 ]
 
 [dependencies]
@@ -34,7 +36,10 @@ thiserror = "2.0.19"
 toml = "1.1.4"
 ureq = "3.3.0"
 winnow = "1.0.4"
-yansi = "1.0.1"
+yansi = { version = "1.0.1", features = ["detect-env", "detect-tty"] }
+
+[dev-dependencies]
+tempfile = "3"
 
 [profile.release]
 lto = true
