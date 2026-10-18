@@ -36,7 +36,7 @@
             version = cargoToml.package.version;
             src = ./.;
 
-            cargoHash = pkgs.lib.fakeHash;
+            cargoHash = "sha256-vtErNqgYbUjoxbAvHOZVvDZZdzIAL+RVnq2GriWd9bQ=";
 
             buildInputs = with pkgs; [
               pkg-config
