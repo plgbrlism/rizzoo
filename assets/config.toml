@@ -19,4 +19,5 @@
 # [alacritty]
 # template = "alacritty.tmpl"
 # output   = "~/.config/alacritty/colors.toml"
+# post_hook is spawned detached (not awaited); stderr stays visible.
 # post_hook = "pkill -SIGUSR1 alacritty"

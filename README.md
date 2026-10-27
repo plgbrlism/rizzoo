@@ -94,7 +94,7 @@ output    = "~/.config/alacritty/colors.toml"
 post_hook = "pkill -SIGUSR1 alacritty"
 ```
 
-`post_hook` runs after the template is written. Add `enabled = false` to skip an entry. Full schema in [Configuration](https://github.com/plgbrlism/rizzoo/wiki/Configuration).
+`post_hook` is spawned in the background after the template is written; rizzoo does not wait for it to finish, so slow scripts never delay the run. Hook stderr stays attached to the terminal, but note there is no post-exit guarantee that a hook's side effects are complete. Add `enabled = false` to skip an entry. Full schema in [Configuration](https://github.com/plgbrlism/rizzoo/wiki/Configuration).
 
 ## Templates
 

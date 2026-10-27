@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::process::{Command, Stdio};
 
 use directories::BaseDirs;
 use tabled::{
@@ -17,10 +18,16 @@ pub fn render_all(
     paths: &Paths,
     templates: &HashMap<String, TemplateConfiguration>,
 ) -> Result<(), LRatio> {
+    let mut hooks = Vec::new();
     for (name, entry) in templates {
-        if let Err(e) = render_and_write(name, entry, paths) {
-            log::warn!("{e}");
+        match render_and_write(name, entry, paths) {
+            Ok(Some(hook)) => hooks.push((name.clone(), hook)),
+            Ok(None) => {}
+            Err(e) => log::warn!("{e}"),
         }
+    }
+    for (name, hook) in hooks {
+        spawn_hook(&name, &hook);
     }
     Ok(())
 }
@@ -33,17 +40,20 @@ pub fn render_one(
     let entry = templates
         .get(name)
         .ok_or_else(|| LRatio::Custom(format!("entry '{name}' not found in config")))?;
-    render_and_write(name, entry, paths)
+    if let Some(hook) = render_and_write(name, entry, paths)? {
+        spawn_hook(name, &hook);
+    }
+    Ok(())
 }
 
 fn render_and_write(
     name: &str,
     entry: &TemplateConfiguration,
     paths: &Paths,
-) -> Result<(), LRatio> {
+) -> Result<Option<String>, LRatio> {
     if !entry.enabled {
         log::info!("Skipping disabled template: {name}");
-        return Ok(());
+        return Ok(None);
     }
     let source_cache_path = paths.cache_dir.join(&entry.template);
     if !source_cache_path.exists() {
@@ -78,26 +88,34 @@ fn render_and_write(
         )
     })?;
     log::info!("output: {name} → {}", output_path.display());
-    if let Some(hook) = &entry.post_hook {
-        let output = std::process::Command::new("sh")
-            .arg("-c")
-            .arg(hook)
-            .output()
-            .map_err(|e| {
-                LRatio::Custom(format!(
-                    "failed to run post_hook for template '{}': {e}",
-                    entry.template
-                ))
-            })?;
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            log::warn!(
-                "post_hook for template '{}' failed: {stderr}",
-                entry.template
-            );
+    Ok(entry.post_hook.clone())
+}
+
+/// Spawn a post_hook detached from the process lifetime.
+///
+/// Hooks run in the background so slow scripts (e.g. ones that compile
+/// something) never gate rizzoo's exit. stdout is discarded to keep output
+/// clean; stderr is inherited so failures remain visible without users having
+/// to wire up their own logging.
+fn spawn_hook(name: &str, hook: &str) {
+    match Command::new("sh")
+        .arg("-c")
+        .arg(hook)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .spawn()
+    {
+        Ok(mut child) => {
+            log::info!("hook: spawned for {name}");
+            // Reap in the background so watch mode does not accumulate zombies.
+            // This never blocks the caller; on one-shot runs the process exits
+            // first and the hook is simply orphaned.
+            std::thread::spawn(move || {
+                let _ = child.wait();
+            });
         }
+        Err(e) => log::warn!("hook: spawn failed for {name}: {e}"),
     }
-    Ok(())
 }
 
 fn swatch(color: &Rgb) -> String {
@@ -180,4 +198,118 @@ fn resolve_path(path: &str) -> PathBuf {
         }
     }
     PathBuf::from(path)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::{Duration, Instant};
+
+    fn paths_in(tmp: &std::path::Path) -> Paths {
+        let cache = tmp.join("cache");
+        Paths {
+            cache_dir: cache.clone(),
+            output: cache.join("colors.json"),
+            schemes_dir: cache.join("schemes"),
+            config_dir: tmp.join("config"),
+            templates_dir: tmp.join("config/templates"),
+            config_toml: tmp.join("config/config.toml"),
+            downloads_dir: cache.join("url-images"),
+        }
+    }
+
+    fn entry(
+        template: &str,
+        output: &std::path::Path,
+        hook: Option<&str>,
+    ) -> TemplateConfiguration {
+        TemplateConfiguration {
+            template: template.to_string(),
+            output: output.to_string_lossy().to_string(),
+            post_hook: hook.map(str::to_string),
+            enabled: true,
+        }
+    }
+
+    fn wait_for(path: &std::path::Path) -> bool {
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while Instant::now() < deadline {
+            if path.exists() {
+                return true;
+            }
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        false
+    }
+
+    fn seed_template(paths: &Paths, name: &str) {
+        std::fs::create_dir_all(&paths.cache_dir).unwrap();
+        std::fs::write(paths.cache_dir.join(name), "rendered").unwrap();
+    }
+
+    #[test]
+    fn render_and_write_collects_hook_without_running_it() {
+        let tmp = tempfile::tempdir().unwrap();
+        let paths = paths_in(tmp.path());
+        seed_template(&paths, "alacritty.toml");
+        let sentinel = tmp.path().join("ran");
+        let out = tmp.path().join("out.toml");
+        let e = entry(
+            "alacritty.toml",
+            &out,
+            Some(&format!("touch '{}'", sentinel.display())),
+        );
+
+        let hook = render_and_write("alacritty", &e, &paths).unwrap();
+
+        assert!(hook.is_some());
+        assert!(out.exists());
+        assert!(!sentinel.exists(), "hook must not run during collection");
+    }
+
+    #[test]
+    fn render_and_write_returns_none_for_disabled() {
+        let tmp = tempfile::tempdir().unwrap();
+        let paths = paths_in(tmp.path());
+        let mut e = entry("x.toml", &tmp.path().join("out"), Some("true"));
+        e.enabled = false;
+
+        assert!(render_and_write("x", &e, &paths).unwrap().is_none());
+    }
+
+    #[test]
+    fn spawn_hook_runs_detached() {
+        let tmp = tempfile::tempdir().unwrap();
+        let sentinel = tmp.path().join("spawned");
+
+        spawn_hook("test", &format!("touch '{}'", sentinel.display()));
+
+        assert!(wait_for(&sentinel), "detached hook did not run");
+    }
+
+    #[test]
+    fn render_all_spawns_hooks_after_all_outputs_written() {
+        let tmp = tempfile::tempdir().unwrap();
+        let paths = paths_in(tmp.path());
+        seed_template(&paths, "a.toml");
+        seed_template(&paths, "b.toml");
+
+        let out_a = tmp.path().join("a.out");
+        let out_b = tmp.path().join("b.out");
+        let sentinel = tmp.path().join("saw_both");
+        let hook = format!(
+            "[ -f '{}' ] && [ -f '{}' ] && touch '{}'",
+            out_a.display(),
+            out_b.display(),
+            sentinel.display()
+        );
+
+        let mut templates = HashMap::new();
+        templates.insert("a".to_string(), entry("a.toml", &out_a, Some(&hook)));
+        templates.insert("b".to_string(), entry("b.toml", &out_b, None));
+
+        render_all(&paths, &templates).unwrap();
+
+        assert!(wait_for(&sentinel), "hook saw missing outputs");
+    }
 }
